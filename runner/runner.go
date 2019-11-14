@@ -105,7 +105,7 @@ func (r *Runner) run() {
 
 			r.lock.Unlock()
 
-			_, _ = j.Run()
+			j.Run().Wait()
 
 			r.lock.Lock()
 			delete(r.running, hash)

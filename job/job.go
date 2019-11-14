@@ -37,7 +37,7 @@ func (j *Job) ID() ID {
 	return ID(j.id.String())
 }
 
-func (j *Job) Run() (interface{}, error) {
+func (j *Job) run() (interface{}, error) {
 	result, err := j.task.Run(j)
 
 	j.lock.Lock()
@@ -63,14 +63,14 @@ func (j *Job) Run() (interface{}, error) {
 	return result, err
 }
 
-func (j *Job) Go() *Wait {
-	wait := &Wait{
+func (j *Job) Run() *Future {
+	wait := &Future{
 		done: make(chan struct{}),
 	}
 
 	go func() {
 		defer close(wait.done)
-		wait.result, wait.err = j.Run()
+		wait.result, wait.err = j.run()
 		wait.canceled = j.IsCanceled()
 	}()
 
