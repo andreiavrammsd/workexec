@@ -12,7 +12,7 @@ type Task interface {
 	Run(*Job) (interface{}, error)
 }
 
-// Job contains a Task
+// ID of a job
 type ID string
 
 type (
@@ -21,6 +21,7 @@ type (
 	OnCancel  func(error)
 )
 
+// Job contains a Task
 type Job struct {
 	id        uuid.UUID
 	task      Task
@@ -32,6 +33,7 @@ type Job struct {
 	lock      sync.RWMutex
 }
 
+// ID returns job ID
 func (j *Job) ID() ID {
 	return ID(j.id.String())
 }
@@ -62,6 +64,7 @@ func (j *Job) run() (interface{}, error) {
 	return result, err
 }
 
+// Run starts executing the job task and returns a Future.
 func (j *Job) Run() *Future {
 	wait := &Future{
 		done: make(chan struct{}),
@@ -76,6 +79,7 @@ func (j *Job) Run() *Future {
 	return wait
 }
 
+// Cancel stops job.
 func (j *Job) Cancel(err error) {
 	if err == nil {
 		err = errors.New("canceled")
@@ -105,12 +109,14 @@ func (j *Job) OnCancel(f OnCancel) {
 	j.onCancel = f
 }
 
+// IsCanceled returns true if job was canceled.
 func (j *Job) IsCanceled() bool {
 	j.lock.RLock()
 	defer j.lock.RUnlock()
 	return j.cancel != nil
 }
 
+// New creates a new job with a given task.
 func New(task Task) (*Job, error) {
 	if task == nil {
 		return nil, errors.New("task function not passed")

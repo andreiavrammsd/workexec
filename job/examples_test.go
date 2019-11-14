@@ -90,7 +90,7 @@ func ExampleJobCancel() {
 	// on cancel: canceled
 }
 
-func ExampleJobCancelWithCustomError() {
+func Example_job_cancel_with_custom_error() {
 	fibonacci, err := job.New(&fibonacciTask{n: 3})
 	if err != nil {
 		log.Fatal(err)

@@ -57,7 +57,7 @@ func ExampleRunner() {
 	// runner is stopped
 }
 
-func ExampleRunner_CancelRunningJobByID() {
+func ExampleRunner_cancel_running_job_by_ID() {
 	// Create job
 	jobA, err := job.New(&myTask{text: "A"})
 	if err != nil {
@@ -101,7 +101,7 @@ func ExampleRunner_CancelRunningJobByID() {
 	// canceled: canceled by runner
 }
 
-func ExampleRunner_CancelJob() {
+func ExampleRunner_cancel_job() {
 	// Create job
 	jobA, err := job.New(&myTask{text: "A"})
 	if err != nil {
@@ -145,7 +145,7 @@ func ExampleRunner_CancelJob() {
 	// canceled: canceled by user
 }
 
-func ExampleRunner_CancelFutureJobByID() {
+func ExampleRunner_cancel_future_job_by_ID() {
 	// Create jobs
 	jobA, err := job.New(&myTask{text: "A"})
 	if err != nil {
@@ -195,7 +195,7 @@ func ExampleRunner_CancelFutureJobByID() {
 	// canceled: canceled by runner
 }
 
-func ExampleRunner_JobError() {
+func ExampleRunner_job_error() {
 	// Create job
 	jobA, err := job.New(&myTask{text: "err"})
 	if err != nil {
@@ -237,13 +237,13 @@ type myTask struct {
 	text string
 }
 
-func (t *myTask) Run(job *job.Job) (interface{}, error) {
+func (t *myTask) Run(j *job.Job) (interface{}, error) {
 	if t.text == "err" {
 		return nil, errors.New("err")
 	}
 
 	for i := 0; i < 2; i++ {
-		if job.IsCanceled() {
+		if j.IsCanceled() {
 			break
 		}
 		fmt.Println(t.text)
