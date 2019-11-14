@@ -30,7 +30,6 @@ type Job struct {
 	onError   OnError
 	onCancel  OnCancel
 	lock      sync.RWMutex
-	options   []Option
 }
 
 func (j *Job) ID() ID {
@@ -112,7 +111,7 @@ func (j *Job) IsCanceled() bool {
 	return j.cancel != nil
 }
 
-func New(task Task, o ...Option) (*Job, error) {
+func New(task Task) (*Job, error) {
 	if task == nil {
 		return nil, errors.New("task function not passed")
 	}
@@ -120,10 +119,6 @@ func New(task Task, o ...Option) (*Job, error) {
 	job := &Job{
 		task: task,
 		id:   uuid.New(),
-	}
-
-	for i := 0; i < len(o); i++ {
-		o[i].Apply(job)
 	}
 
 	return job, nil

@@ -113,28 +113,6 @@ func ExampleJobCancelWithCustomError() {
 	// canceled by user
 }
 
-func ExampleJobWithOptions() {
-	fibonacci, err := job.New(&fibonacciTask{n: 6}, &job.WithTimeout{
-		Timeout: time.Millisecond,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fibonacci.OnCancel(func(err error) {
-		fmt.Println(err)
-	})
-
-	fibonacci.Run().Wait()
-
-	if !fibonacci.IsCanceled() {
-		log.Fatal("expected to be canceled")
-	}
-
-	// Output:
-	// timeout
-}
-
 type fibonacciTask struct {
 	n     uint
 	count uint
