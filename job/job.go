@@ -33,31 +33,34 @@ type Job struct {
 	options   []Option
 }
 
+func (j *Job) ID() ID {
+	return ID(j.id.String())
+}
+
 func (j *Job) Run() (interface{}, error) {
 	result, err := j.task.Run(j)
 
-	j.lock.RLock()
-	defer j.lock.RUnlock()
+	j.lock.Lock()
+	defer j.lock.Unlock()
 
-	if err == nil {
-		if j.onSuccess != nil {
-			j.onSuccess(result)
-		}
+	// Cancel
+	if j.cancel != nil {
+		return nil, nil
+	}
 
-		if j.cancel != nil && j.onCancel != nil {
-			j.onCancel(j.cancel)
+	// Error or success
+	if err != nil {
+		if j.onError != nil {
+			j.err = err
+			j.onError(err)
 		}
 	} else {
-		if j.onError != nil {
-			j.onError(err)
+		if j.onSuccess != nil {
+			j.onSuccess(result)
 		}
 	}
 
 	return result, err
-}
-
-func (j *Job) ID() ID {
-	return ID(j.id.String())
 }
 
 func (j *Job) Go() *Wait {
@@ -77,9 +80,21 @@ func (j *Job) Cancel(err error) {
 	if err == nil {
 		err = errors.New("canceled")
 	}
+
 	j.lock.Lock()
+	defer j.lock.Unlock()
+
 	j.cancel = err
-	j.lock.Unlock()
+
+	if j.onCancel != nil {
+		j.onCancel(j.cancel)
+	}
+}
+
+func (j *Job) Error() error {
+	j.lock.RLock()
+	defer j.lock.RUnlock()
+	return j.err
 }
 
 func (j *Job) OnSuccess(f OnSuccess) {
@@ -87,7 +102,9 @@ func (j *Job) OnSuccess(f OnSuccess) {
 }
 
 func (j *Job) OnError(f OnError) {
+	j.lock.Lock()
 	j.onError = f
+	j.lock.Unlock()
 }
 
 func (j *Job) OnCancel(f OnCancel) {
