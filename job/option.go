@@ -12,13 +12,10 @@ type Option interface {
 
 type WithTimeout struct {
 	Timeout time.Duration
-	Err     error
 }
 
 func (o *WithTimeout) Apply(j *Job) {
-	o.Err = errors.New("timedout")
 	time.AfterFunc(o.Timeout, func() {
-		//j.Cancel(ErrTimeout)
-		j.Cancel(o.Err)
+		j.Cancel(errors.New("timeout"))
 	})
 }

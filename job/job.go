@@ -3,6 +3,8 @@ package job
 import (
 	"errors"
 	"sync"
+
+	"github.com/google/uuid"
 )
 
 // Task belongs to user
@@ -20,6 +22,7 @@ type (
 )
 
 type Job struct {
+	id        uuid.UUID
 	task      Task
 	err       error
 	cancel    error
@@ -32,6 +35,9 @@ type Job struct {
 
 func (j *Job) Run() (interface{}, error) {
 	result, err := j.task.Run(j)
+
+	j.lock.RLock()
+	defer j.lock.RUnlock()
 
 	if err == nil {
 		if j.onSuccess != nil {
@@ -48,6 +54,10 @@ func (j *Job) Run() (interface{}, error) {
 	}
 
 	return result, err
+}
+
+func (j *Job) ID() ID {
+	return ID(j.id.String())
 }
 
 func (j *Job) Go() *Wait {
@@ -95,13 +105,14 @@ func New(task Task, o ...Option) (*Job, error) {
 		return nil, errors.New("task function not passed")
 	}
 
-	job := Job{
+	job := &Job{
 		task: task,
+		id:   uuid.New(),
 	}
 
 	for i := 0; i < len(o); i++ {
-		o[i].Apply(&job)
+		o[i].Apply(job)
 	}
 
-	return &job, nil
+	return job, nil
 }

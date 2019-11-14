@@ -16,6 +16,10 @@ func ExampleSyncJob() {
 		log.Fatal(err)
 	}
 
+	if fibonacci.ID() == job.ID("") {
+		log.Fatal("expected job id")
+	}
+
 	fibonacci.OnSuccess(func(result interface{}) {
 		fmt.Println("on success result:", result.(uint))
 	})
@@ -24,8 +28,8 @@ func ExampleSyncJob() {
 	if err != nil {
 		log.Fatal("error", err)
 	}
-	fmt.Println("returned result:", result.(uint))
 
+	fmt.Println("returned result:", result.(uint))
 	fmt.Println("numbers calculated:", task.count)
 
 	// Output:
@@ -45,12 +49,13 @@ func ExampleSyncJobError() {
 	})
 
 	result, err := fibonacci.Run()
-	if err != nil {
-		fmt.Println("returned error:", err)
-	}
 
 	if result != nil {
-		fmt.Println(result)
+		log.Fatal("expected no result")
+	}
+
+	if err != nil {
+		fmt.Println("returned error:", err)
 	}
 
 	// Output:
@@ -88,20 +93,41 @@ func ExampleAsyncJobError() {
 	wait := fibonacci.Go()
 	wait.Wait()
 
-	fmt.Println("wait error:", wait.Error())
-
-	fmt.Print("wait result:")
 	if wait.Result() != nil {
-		fmt.Println(wait.Result())
+		log.Fatal("expected no result")
 	}
+
+	fmt.Println("wait error:", wait.Error())
 
 	// Output:
 	// on error: n == 0
 	// wait error: n == 0
-	// wait result:
 }
 
 func ExampleAsyncJobCancel() {
+	fibonacci, err := job.New(&fibonacciTask{n: 3})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fibonacci.OnCancel(func(err error) {
+		fmt.Println(err)
+	})
+
+	fibonacci.Cancel(nil)
+
+	wait := fibonacci.Go()
+	wait.Wait()
+
+	if !fibonacci.IsCanceled() {
+		log.Fatal("expected to be canceled")
+	}
+
+	// Output:
+	// canceled
+}
+
+func ExampleAsyncJobCancelWithCustomError() {
 	fibonacci, err := job.New(&fibonacciTask{n: 3})
 	if err != nil {
 		log.Fatal(err)
@@ -116,11 +142,50 @@ func ExampleAsyncJobCancel() {
 	wait := fibonacci.Go()
 	wait.Wait()
 
-	fmt.Println(fibonacci.IsCanceled())
+	if !fibonacci.IsCanceled() {
+		log.Fatal("expected to be canceled")
+	}
 
 	// Output:
 	// canceled by user
-	// true
+}
+
+func ExampleJobWithOptions() {
+	fibonacci, err := job.New(&fibonacciTask{n: 6}, &job.WithTimeout{
+		Timeout: time.Millisecond,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fibonacci.OnCancel(func(err error) {
+		fmt.Println(err)
+	})
+
+	_, err = fibonacci.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if !fibonacci.IsCanceled() {
+		log.Fatal("expected to be canceled")
+	}
+
+	// Output:
+	// timeout
+}
+
+func ExampleNewJobError() {
+	j, err := job.New(nil)
+
+	if j != nil {
+		log.Fatal("expected no job")
+	}
+
+	fmt.Println(err)
+
+	// Output:
+	// task function not passed
 }
 
 type fibonacciTask struct {
