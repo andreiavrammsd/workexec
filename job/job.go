@@ -1,3 +1,5 @@
+// Package job provides a method to executed an async task and be notified when executions
+// is done (successfully, with error or canceled).
 package job
 
 import (
@@ -7,61 +9,20 @@ import (
 	"github.com/google/uuid"
 )
 
-// Task belongs to user
-type Task interface {
-	Run(*Job) (interface{}, error)
-}
-
-// ID of a job
+// ID of a job.
 type ID string
 
-type (
-	OnSuccess func(interface{})
-	OnError   func(error)
-	OnCancel  func(error)
-)
-
-// Job contains a Task
+// Job contains a Task.
 type Job struct {
-	id        uuid.UUID
-	task      Task
-	err       error
-	cancel    error
-	onSuccess OnSuccess
-	onError   OnError
-	onCancel  OnCancel
-	lock      sync.RWMutex
+	id     uuid.UUID
+	task   Task
+	cancel error
+	lock   sync.RWMutex
 }
 
-// ID returns job ID
+// ID returns the job unique identifier.
 func (j *Job) ID() ID {
 	return ID(j.id.String())
-}
-
-func (j *Job) run() (interface{}, error) {
-	result, err := j.task.Run(j)
-
-	j.lock.Lock()
-	defer j.lock.Unlock()
-
-	// Cancel
-	if j.cancel != nil {
-		return nil, nil
-	}
-
-	// Error or success
-	if err != nil {
-		if j.onError != nil {
-			j.err = err
-			j.onError(err)
-		}
-	} else {
-		if j.onSuccess != nil {
-			j.onSuccess(result)
-		}
-	}
-
-	return result, err
 }
 
 // Run starts executing the job task and returns a Future.
@@ -79,34 +40,19 @@ func (j *Job) Run() *Future {
 	return wait
 }
 
-// Cancel stops job.
+// Cancel asks the job to stop.
 func (j *Job) Cancel(err error) {
+	if _, ok := j.task.(CancelableTask); !ok {
+		return
+	}
+
 	if err == nil {
 		err = errors.New("canceled")
 	}
 
 	j.lock.Lock()
-	defer j.lock.Unlock()
-
 	j.cancel = err
-
-	if j.onCancel != nil {
-		j.onCancel(j.cancel)
-	}
-}
-
-func (j *Job) OnSuccess(f OnSuccess) {
-	j.onSuccess = f
-}
-
-func (j *Job) OnError(f OnError) {
-	j.lock.Lock()
-	j.onError = f
 	j.lock.Unlock()
-}
-
-func (j *Job) OnCancel(f OnCancel) {
-	j.onCancel = f
 }
 
 // IsCanceled returns true if job was canceled.
@@ -114,6 +60,35 @@ func (j *Job) IsCanceled() bool {
 	j.lock.RLock()
 	defer j.lock.RUnlock()
 	return j.cancel != nil
+}
+
+func (j *Job) run() (result interface{}, err error) {
+	result, err = j.task.Run(j)
+
+	if task, ok := j.task.(CancelableTask); ok {
+		j.lock.RLock()
+		cancel := j.cancel
+		j.lock.RUnlock()
+
+		if cancel != nil {
+			task.OnCancel(j.cancel)
+			return
+		}
+	}
+
+	if task, ok := j.task.(SuccessfulTask); ok {
+		if err == nil {
+			task.OnSuccess(result)
+		}
+	}
+
+	if task, ok := j.task.(FailedTask); ok {
+		if err != nil {
+			task.OnError(err)
+		}
+	}
+
+	return
 }
 
 // New creates a new job with a given task.

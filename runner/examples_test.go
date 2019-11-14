@@ -11,16 +11,21 @@ import (
 )
 
 func ExampleRunner() {
-	// Create jobs
-	jobA, err := job.New(&myTask{text: "A"})
+	job1, err := job.New(&defaultTask{num: 1})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	jobB, err := job.New(&myTask{text: "B"})
+	job2, err := job.New(&defaultTask{num: -1})
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	job3, err := job.New(&defaultTask{num: 0})
+	if err != nil {
+		log.Fatal(err)
+	}
+	job3.Cancel(errors.New("job 3 was canceled"))
 
 	// Setup runner
 	c := runner.Config{
@@ -33,40 +38,30 @@ func ExampleRunner() {
 	}
 
 	// Add jobs to runner queue
-	if err := r.Enqueue(jobA, jobB); err != nil {
+	if err := r.Enqueue(job1, job2, job3); err != nil {
 		log.Fatal(err)
 	}
 
 	// Ask runner to stop
 	time.AfterFunc(time.Millisecond*10, func() {
 		r.Stop()
-		r.Stop() // second stop will be ignored
 	})
 
 	// Wait for runner to run jobs
 	r.Wait()
 
-	// Add jobs to stopped runner
-	if err := r.Enqueue(jobA); err != nil {
-		fmt.Println(err)
-	}
-
 	// Unordered output:
-	// A
-	// B
-	// runner is stopped
+	// on success result: 2
+	// on cancel: job 3 was canceled
+	// on error: negative number
 }
 
 func ExampleRunner_cancel_running_job_by_ID() {
 	// Create job
-	jobA, err := job.New(&myTask{text: "A"})
+	jobA, err := job.New(&cancelableTask{&myTask{text: "A"}, "canceled by user"})
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	jobA.OnCancel(func(err error) {
-		fmt.Println("canceled:", err)
-	})
 
 	// Setup runner
 	c := runner.Config{
@@ -98,19 +93,15 @@ func ExampleRunner_cancel_running_job_by_ID() {
 
 	// Output:
 	// A
-	// canceled: canceled by runner
+	// on cancel: canceled by user
 }
 
 func ExampleRunner_cancel_job() {
 	// Create job
-	jobA, err := job.New(&myTask{text: "A"})
+	jobA, err := job.New(&cancelableTask{&myTask{text: "A"}, "canceled by user"})
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	jobA.OnCancel(func(err error) {
-		fmt.Println("canceled:", err)
-	})
 
 	// Setup runner
 	c := runner.Config{
@@ -127,7 +118,7 @@ func ExampleRunner_cancel_job() {
 		log.Fatal(err)
 	}
 
-	// Cancel a job by ID
+	// Cancel job
 	time.AfterFunc(time.Millisecond*1, func() {
 		jobA.Cancel(errors.New("canceled by user"))
 	})
@@ -142,24 +133,20 @@ func ExampleRunner_cancel_job() {
 
 	// Output:
 	// A
-	// canceled: canceled by user
+	// on cancel: canceled by user
 }
 
 func ExampleRunner_cancel_future_job_by_ID() {
 	// Create jobs
-	jobA, err := job.New(&myTask{text: "A"})
+	jobA, err := job.New(&cancelableTask{&myTask{text: "A"}, "err A"})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	jobB, err := job.New(&myTask{text: "B"})
+	jobB, err := job.New(&cancelableTask{&myTask{text: "B"}, "err B"})
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	jobB.OnCancel(func(err error) {
-		fmt.Println("canceled:", err)
-	})
 
 	// Setup runner
 	c := runner.Config{
@@ -195,42 +182,41 @@ func ExampleRunner_cancel_future_job_by_ID() {
 	// canceled: canceled by runner
 }
 
-func ExampleRunner_job_error() {
-	// Create job
-	jobA, err := job.New(&myTask{text: "err"})
-	if err != nil {
-		log.Fatal(err)
+type defaultTask struct {
+	num int
+}
+
+func (t *defaultTask) Run(*job.Job) (interface{}, error) {
+	if t.num < 0 {
+		return nil, errors.New("negative number")
 	}
 
-	// Setup runner
-	c := runner.Config{
-		Concurrency: 1,
-		QueueSize:   1,
-	}
-	r, err := runner.New(c)
-	if err != nil {
-		log.Fatal(err)
-	}
+	return t.num + 1, nil
+}
 
-	// Add job to runner queue
-	if err := r.Enqueue(jobA); err != nil {
-		log.Fatal(err)
-	}
+func (t *defaultTask) OnSuccess(result interface{}) {
+	fmt.Println("on success result:", result.(int))
+}
 
-	jobA.OnError(func(err error) {
-		fmt.Println("on error:", err)
-	})
+func (t *defaultTask) OnError(err error) {
+	fmt.Println("on error:", err)
+}
 
-	// Ask runner to stop
-	time.AfterFunc(time.Millisecond*10, func() {
-		r.Stop()
-	})
+func (t *defaultTask) OnCancel(err error) {
+	fmt.Println("on cancel:", err)
+}
 
-	// Wait for runner to run jobs
-	r.Wait()
+type cancelableTask struct {
+	*myTask
+	err string
+}
 
-	// Output:
-	// on error: err
+func (c *cancelableTask) Run(j *job.Job) (interface{}, error) {
+	return c.myTask.Run(j)
+}
+
+func (c *cancelableTask) OnCancel(err error) {
+	fmt.Println("on cancel:", c.err)
 }
 
 type myTask struct {
@@ -247,7 +233,7 @@ func (t *myTask) Run(j *job.Job) (interface{}, error) {
 			break
 		}
 		fmt.Println(t.text)
-		time.Sleep(time.Millisecond * 50)
+		time.Sleep(time.Millisecond * 60)
 	}
 
 	return nil, nil

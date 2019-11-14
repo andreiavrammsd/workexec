@@ -13,6 +13,13 @@ const (
 	concurrency = 1024
 )
 
+// Config allows setup of runner.
+type Config struct {
+	Concurrency uint
+	QueueSize   uint
+}
+
+// Runner represents a manager of jobs.
 type Runner struct {
 	concurrency uint
 	queue       chan *job.Job
@@ -24,9 +31,7 @@ type Runner struct {
 	lock        sync.RWMutex
 }
 
-type ErrorFunc func(job.Task)
-
-// is blocking
+// Enqueue puts jobs to the runner queue.
 func (r *Runner) Enqueue(jobs ...*job.Job) error {
 	r.lock.RLock()
 	stopped := r.stopped
@@ -43,10 +48,12 @@ func (r *Runner) Enqueue(jobs ...*job.Job) error {
 	return nil
 }
 
+// Wait blocks until runner is done with running all the queued jobs.
 func (r *Runner) Wait() {
 	<-r.wait
 }
 
+// Stop asks the runner to stop all jobs from running.
 func (r *Runner) Stop() {
 	r.lock.Lock()
 	defer r.lock.Unlock()
@@ -66,24 +73,11 @@ func (r *Runner) Stop() {
 	}
 }
 
+// Cancel asks a job (by given id) to stop.
 func (r *Runner) Cancel(id job.ID) {
 	r.lock.Lock()
 	r.cancel(id)
 	r.lock.Unlock()
-}
-
-func (r *Runner) cancel(id job.ID) {
-	hash := hash(id)
-
-	// Cancel now if running
-	j, ok := r.running[hash]
-	if ok {
-		j.Cancel(errors.New("canceled by runner"))
-		return
-	}
-
-	// Schedule to be canceled before run
-	r.toCancel[hash] = struct{}{}
 }
 
 func (r *Runner) run() {
@@ -113,7 +107,7 @@ func (r *Runner) run() {
 		case <-r.stop:
 			r.lock.RLock()
 			if r.stopped && len(r.running) == 0 {
-				close(r.wait)
+				r.wait <- struct{}{}
 			}
 			r.lock.RUnlock()
 
@@ -122,11 +116,21 @@ func (r *Runner) run() {
 	}
 }
 
-type Config struct {
-	Concurrency uint
-	QueueSize   uint
+func (r *Runner) cancel(id job.ID) {
+	hash := hash(id)
+
+	// Cancel now if running
+	j, ok := r.running[hash]
+	if ok {
+		j.Cancel(errors.New("canceled by runner"))
+		return
+	}
+
+	// Schedule to be canceled before run
+	r.toCancel[hash] = struct{}{}
 }
 
+// New creates a new job runner.
 func New(c Config) (*Runner, error) {
 	if c.Concurrency == 0 {
 		c.Concurrency = concurrency
