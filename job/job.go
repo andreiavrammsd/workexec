@@ -71,6 +71,7 @@ func (j *Job) Go() *Wait {
 	go func() {
 		defer close(wait.done)
 		wait.result, wait.err = j.Run()
+		wait.canceled = j.IsCanceled()
 	}()
 
 	return wait
@@ -89,12 +90,6 @@ func (j *Job) Cancel(err error) {
 	if j.onCancel != nil {
 		j.onCancel(j.cancel)
 	}
-}
-
-func (j *Job) Error() error {
-	j.lock.RLock()
-	defer j.lock.RUnlock()
-	return j.err
 }
 
 func (j *Job) OnSuccess(f OnSuccess) {

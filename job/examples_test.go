@@ -111,7 +111,7 @@ func ExampleAsyncJobCancel() {
 	}
 
 	fibonacci.OnCancel(func(err error) {
-		fmt.Println(err)
+		fmt.Println("on cancel:", err)
 	})
 
 	fibonacci.Cancel(nil)
@@ -123,8 +123,12 @@ func ExampleAsyncJobCancel() {
 		log.Fatal("expected to be canceled")
 	}
 
+	if !wait.IsCanceled() {
+		log.Fatal("expected to be canceled")
+	}
+
 	// Output:
-	// canceled
+	// on cancel: canceled
 }
 
 func ExampleAsyncJobCancelWithCustomError() {

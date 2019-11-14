@@ -1,9 +1,10 @@
 package job
 
 type Wait struct {
-	done   chan struct{}
-	result interface{}
-	err    error
+	done     chan struct{}
+	result   interface{}
+	err      error
+	canceled bool
 }
 
 func (w *Wait) Wait() {
@@ -16,4 +17,8 @@ func (w *Wait) Result() interface{} {
 
 func (w *Wait) Error() error {
 	return w.err
+}
+
+func (w *Wait) IsCanceled() bool {
+	return w.canceled
 }
