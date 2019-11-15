@@ -31,6 +31,6 @@ func TestNewWithError(t *testing.T) {
 	}
 
 	if err == nil {
-		t.Error("expected task function not passed error")
+		t.Error("expected nil task passed to job error")
 	}
 }

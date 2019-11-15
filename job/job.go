@@ -27,17 +27,17 @@ func (j *Job) ID() ID {
 
 // Run starts executing the job task and returns a Future.
 func (j *Job) Run() *Future {
-	wait := &Future{
+	future := &Future{
 		done: make(chan struct{}),
 	}
 
 	go func() {
-		defer close(wait.done)
-		wait.result, wait.err = j.run()
-		wait.canceled = j.IsCanceled()
+		defer close(future.done)
+		future.result, future.err = j.run()
+		future.canceled = j.IsCanceled()
 	}()
 
-	return wait
+	return future
 }
 
 // Cancel asks the job to stop.
@@ -94,7 +94,7 @@ func (j *Job) run() (result interface{}, err error) {
 // New creates a new job with a given task.
 func New(task Task) (*Job, error) {
 	if task == nil {
-		return nil, errors.New("task function not passed")
+		return nil, errors.New("nil task passed to job")
 	}
 
 	job := &Job{

@@ -9,22 +9,22 @@ type Future struct {
 }
 
 // Wait blocks until job is done.
-func (w *Future) Wait() {
-	<-w.done
+func (f *Future) Wait() {
+	<-f.done
 }
 
 // Result returns job result. Blocks until job is done.
-func (w *Future) Result() interface{} {
-	<-w.done
-	return w.result
+func (f *Future) Result() interface{} {
+	<-f.done
+	return f.result
 }
 
 // Error returns job error.
-func (w *Future) Error() error {
-	return w.err
+func (f *Future) Error() error {
+	return f.err
 }
 
 // IsCanceled returns true if job was canceled.
-func (w *Future) IsCanceled() bool {
-	return w.canceled
+func (f *Future) IsCanceled() bool {
+	return f.canceled
 }
