@@ -179,7 +179,7 @@ func ExampleRunner_cancel_future_job_by_ID() {
 	// Output:
 	// A
 	// A
-	// canceled: canceled by runner
+	// on cancel: err B
 }
 
 type defaultTask struct {
