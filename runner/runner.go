@@ -31,6 +31,13 @@ type Runner struct {
 	lock        sync.RWMutex
 }
 
+// Status represents the current state of the runner, regarding number of routines
+// it is working on and count of jobs currently running.
+type Status struct {
+	Concurrency uint
+	RunningJobs uint
+}
+
 // Enqueue puts jobs to the runner queue.
 func (r *Runner) Enqueue(jobs ...*job.Job) error {
 	r.lock.RLock()
@@ -128,6 +135,16 @@ func (r *Runner) cancel(id job.ID) {
 
 	// Schedule to be canceled before run
 	r.toCancel[hash] = struct{}{}
+}
+
+// Status returns runner state
+func (r *Runner) Status() Status {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
+	return Status{
+		Concurrency: r.concurrency,
+		RunningJobs: uint(len(r.running)),
+	}
 }
 
 // New creates a new job runner.
