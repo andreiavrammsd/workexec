@@ -1,5 +1,7 @@
 // Package job provides a method to executed an async task and be notified when executions
 // is done (successfully, with error or canceled).
+// A job contains a task which actually does the work. A task is a struct which implements the
+// Task interface. Other task related interfaces can be used to be notified about events.
 package job
 
 import (
