@@ -42,30 +42,6 @@ func ExampleJob() {
 	// on cancel: job 3 was canceled
 }
 
-type defaultTask struct {
-	num int
-}
-
-func (t *defaultTask) Run(*job.Job) (interface{}, error) {
-	if t.num < 0 {
-		return nil, errors.New("negative number")
-	}
-
-	return t.num + 1, nil
-}
-
-func (t *defaultTask) OnSuccess(result interface{}) {
-	fmt.Println("on success result:", result.(int))
-}
-
-func (t *defaultTask) OnError(err error) {
-	fmt.Println("on error:", err)
-}
-
-func (t *defaultTask) OnCancel(err error) {
-	fmt.Println("on cancel:", err)
-}
-
 func Example_cancel_long_running_tasks() {
 	fibonacci10, err := job.New(&fibonacciTask{n: 10})
 	if err != nil {
@@ -91,6 +67,30 @@ func Example_cancel_long_running_tasks() {
 	// Unordered output:
 	// on cancel: 10
 	// on cancel: 100
+}
+
+type defaultTask struct {
+	num int
+}
+
+func (t *defaultTask) Run(*job.Job) (interface{}, error) {
+	if t.num < 0 {
+		return nil, errors.New("negative number")
+	}
+
+	return t.num + 1, nil
+}
+
+func (t *defaultTask) OnSuccess(result interface{}) {
+	fmt.Println("on success result:", result.(int))
+}
+
+func (t *defaultTask) OnError(err error) {
+	fmt.Println("on error:", err)
+}
+
+func (t *defaultTask) OnCancel(err error) {
+	fmt.Println("on cancel:", err)
 }
 
 type fibonacciTask struct {

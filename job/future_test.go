@@ -7,20 +7,6 @@ import (
 	"github.com/andreiavrammsd/jobrunner/job"
 )
 
-type task struct {
-	in int
-}
-
-func (t *task) OnCancel(err error) {
-}
-
-func (t *task) Run(*job.Job) (interface{}, error) {
-	if t.in == 0 {
-		return nil, errors.New("err")
-	}
-	return t.in + 1, nil
-}
-
 func TestFuture_Wait(t *testing.T) {
 	futureJob, err := job.New(&task{in: 1})
 	if err != nil {
@@ -91,4 +77,18 @@ func TestFuture_IsCanceled(t *testing.T) {
 	if !future.IsCanceled() {
 		t.Error("expected job to be canceled")
 	}
+}
+
+type task struct {
+	in int
+}
+
+func (t *task) OnCancel(err error) {
+}
+
+func (t *task) Run(*job.Job) (interface{}, error) {
+	if t.in == 0 {
+		return nil, errors.New("err")
+	}
+	return t.in + 1, nil
 }
