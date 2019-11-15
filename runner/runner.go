@@ -137,6 +137,21 @@ func (r *Runner) cancel(id job.ID) {
 	r.toCancel[hash] = struct{}{}
 }
 
+// ScaleUp increases concurrency by starting new worker routines.
+func (r *Runner) ScaleUp(count uint) {
+	if count == 0 {
+		return
+	}
+
+	r.lock.Lock()
+	r.concurrency += count
+	r.lock.Unlock()
+
+	for i := uint(0); i < count; i++ {
+		go r.run()
+	}
+}
+
 // Status returns runner state
 func (r *Runner) Status() Status {
 	r.lock.RLock()
