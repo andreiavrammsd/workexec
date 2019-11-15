@@ -145,7 +145,7 @@ func New(c Config) (*Runner, error) {
 		stop:        make(chan struct{}, c.QueueSize),
 		running:     make(map[uint64]*job.Job),
 		toCancel:    make(map[uint64]struct{}),
-		wait:        make(chan struct{}),
+		wait:        make(chan struct{}, c.Concurrency),
 	}
 
 	for i := uint(0); i < r.concurrency; i++ {
