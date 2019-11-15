@@ -182,8 +182,11 @@ func (r *Runner) Status() Status {
 	}
 }
 
+// new - no error
+// start/stop
+
 // New creates a new job runner.
-func New(c Config) (*Runner, error) {
+func New(c Config) *Runner {
 	if c.Concurrency == 0 {
 		c.Concurrency = concurrency
 	}
@@ -204,7 +207,7 @@ func New(c Config) (*Runner, error) {
 		go r.run()
 	}
 
-	return r, nil
+	return r
 }
 
 func hash(id job.ID) uint64 {

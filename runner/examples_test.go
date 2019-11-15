@@ -32,10 +32,7 @@ func ExampleRunner() {
 		Concurrency: 2,
 		QueueSize:   2,
 	}
-	r, err := runner.New(c)
-	if err != nil {
-		log.Fatal(err)
-	}
+	r := runner.New(c)
 
 	// Add jobs to runner queue
 	if err := r.Enqueue(job1, job2, job3); err != nil {
@@ -68,10 +65,7 @@ func ExampleRunner_cancel_running_job_by_ID() {
 		Concurrency: 1,
 		QueueSize:   1,
 	}
-	r, err := runner.New(c)
-	if err != nil {
-		log.Fatal(err)
-	}
+	r := runner.New(c)
 
 	// Add job to runner queue
 	if err := r.Enqueue(jobA); err != nil {
@@ -108,10 +102,7 @@ func ExampleRunner_cancel_job() {
 		Concurrency: 1,
 		QueueSize:   1,
 	}
-	r, err := runner.New(c)
-	if err != nil {
-		log.Fatal(err)
-	}
+	r := runner.New(c)
 
 	// Add job to runner queue
 	if err := r.Enqueue(jobA); err != nil {
@@ -153,10 +144,7 @@ func ExampleRunner_cancel_future_job_by_ID() {
 		Concurrency: 1,
 		QueueSize:   1,
 	}
-	r, err := runner.New(c)
-	if err != nil {
-		log.Fatal(err)
-	}
+	r := runner.New(c)
 
 	// Add jobs to runner queue
 	if err := r.Enqueue(jobA, jobB); err != nil {
