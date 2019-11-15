@@ -11,8 +11,6 @@ import (
 func TestRunner_EnqueueWhenRunnerIsStopped(t *testing.T) {
 	r := runner.New(runner.Config{})
 
-	r.Stop()
-
 	testJob, err := job.New(&task{})
 	if err != nil {
 		t.Fatal(err)
@@ -26,6 +24,7 @@ func TestRunner_EnqueueWhenRunnerIsStopped(t *testing.T) {
 
 func TestRunner_StopMultipleTimes(t *testing.T) {
 	r := runner.New(runner.Config{})
+	r.Start()
 
 	r.Stop()
 	r.Stop()
@@ -38,6 +37,7 @@ func TestRunner_StopWithCancelRunningJobs(t *testing.T) {
 		Concurrency: 1,
 		QueueSize:   1,
 	})
+	r.Start()
 
 	testJob, err := job.New(&task{duration: time.Millisecond * 10})
 	if err != nil {
