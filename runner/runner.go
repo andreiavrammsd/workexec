@@ -152,6 +152,25 @@ func (r *Runner) ScaleUp(count uint) {
 	}
 }
 
+// ScaleDown decreases concurrency by asking routines to stop.
+func (r *Runner) ScaleDown(count uint) {
+	if count == 0 {
+		return
+	}
+
+	r.lock.Lock()
+	if int(r.concurrency)-int(count) >= 0 {
+		r.concurrency -= count
+	} else {
+		r.concurrency = 0
+	}
+	r.lock.Unlock()
+
+	for i := uint(0); i < count; i++ {
+		r.stop <- struct{}{}
+	}
+}
+
 // Status returns runner state
 func (r *Runner) Status() Status {
 	r.lock.RLock()
