@@ -54,6 +54,9 @@ func TestRunner_StopWithCancelRunningJobs(t *testing.T) {
 	}
 
 	err = r.Enqueue(testJob, testJob)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	r.Stop()
 
