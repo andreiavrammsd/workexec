@@ -1,3 +1,4 @@
+// Package runner handles execution of jobs at desired concurrency level.
 package runner
 
 import (
@@ -9,8 +10,8 @@ import (
 )
 
 const (
-	queueSize   = 1024
 	concurrency = 1024
+	queueSize   = 1024
 )
 
 // Config allows setup of runner.
