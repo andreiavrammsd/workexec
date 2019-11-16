@@ -61,10 +61,13 @@ func (f *Future) run() {
 	f.result, f.err = f.task.Run(f.IsCanceled)
 
 	if task, ok := f.task.(CanceledTask); ok {
+		f.RLock()
 		if f.canceled {
+			f.RUnlock()
 			task.OnCancel()
 			return
 		}
+		f.RUnlock()
 	}
 
 	if task, ok := f.task.(SuccessfulTask); ok {
