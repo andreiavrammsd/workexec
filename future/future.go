@@ -14,42 +14,42 @@ type Future struct {
 	err      error
 	canceled bool
 	on       bool
-	sync.RWMutex
+	lock     sync.RWMutex
 }
 
 // Run executes the Task async.
 func (f *Future) Run() {
-	f.Lock()
+	f.lock.Lock()
 	if f.on {
-		f.Unlock()
+		f.lock.Unlock()
 		return
 	}
 	f.on = true
-	f.Unlock()
+	f.lock.Unlock()
 
 	go f.run()
 }
 
 // Wait blocks until task is done.
 func (f *Future) Wait() {
-	f.RLock()
+	f.lock.RLock()
 	if !f.on {
-		f.RUnlock()
+		f.lock.RUnlock()
 		return
 	}
-	f.RUnlock()
+	f.lock.RUnlock()
 
 	<-f.done
 }
 
 // Result returns task result and error. Blocks until task is done.
 func (f *Future) Result() (interface{}, error) {
-	f.RLock()
+	f.lock.RLock()
 	if !f.on {
-		f.RUnlock()
+		f.lock.RUnlock()
 		return f.result, f.err
 	}
-	f.RUnlock()
+	f.lock.RUnlock()
 
 	<-f.done
 
@@ -58,15 +58,15 @@ func (f *Future) Result() (interface{}, error) {
 
 // Cancel asks the task to stop.
 func (f *Future) Cancel() {
-	f.Lock()
+	f.lock.Lock()
 	f.canceled = true
-	f.Unlock()
+	f.lock.Unlock()
 }
 
 // IsCanceled returns true if task was canceled.
 func (f *Future) IsCanceled() bool {
-	f.RLock()
-	defer f.RUnlock()
+	f.lock.RLock()
+	defer f.lock.RUnlock()
 	return f.canceled
 }
 
@@ -76,13 +76,13 @@ func (f *Future) run() {
 	f.result, f.err = f.task.Run(f.IsCanceled)
 
 	if task, ok := f.task.(CanceledTask); ok {
-		f.RLock()
+		f.lock.RLock()
 		if f.canceled {
-			f.RUnlock()
+			f.lock.RUnlock()
 			task.OnCancel()
 			return
 		}
-		f.RUnlock()
+		f.lock.RUnlock()
 	}
 
 	if task, ok := f.task.(SuccessfulTask); ok {
