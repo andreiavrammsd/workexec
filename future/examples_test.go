@@ -4,68 +4,77 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/andreiavrammsd/jobrunner/future"
 )
 
-func Example() {
-	future0, err := future.New(&fibonacciTask{n: 0})
-	if err != nil {
-		log.Fatal(err)
-	}
-
+func ExampleFuture_Wait() {
 	future1, err := future.New(&fibonacciTask{n: 1})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	future3, err := future.New(&fibonacciTask{n: 3})
+	future1.Run()
+	future1.Wait()
+
+	// Output:
+	// on success: 1 -> 1
+}
+
+func ExampleFuture_Result() {
+	future2, err := future.New(&fibonacciTask{n: 2})
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	future2.Run()
+	result, err := future2.Result()
+	fmt.Println(result)
+	fmt.Println(err == nil)
+
+	// Output:
+	// on success: 2 -> 1
+	// 1
+	// true
+}
+
+func ExampleFuture_Cancel() {
 	fibonacci4 := &fibonacciTask{n: 4}
 	future4, err := future.New(fibonacci4)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("future0")
-	future0.Wait()
-	fmt.Println()
-
-	fmt.Println("future1")
-	future1.Wait()
-	fmt.Println()
-
-	fmt.Println("future3")
-	fmt.Println(future3.Result())
-	fmt.Println()
-
-	fmt.Println("future4")
-	go future4.Cancel()
-	future4.Wait()
+	future4.Run()
+	future4.Cancel()
 	fmt.Println(future4.Result())
 	fmt.Println(fibonacci4.nums)
 	fmt.Println(future4.IsCanceled())
 
 	// Output:
-	// future0
-	// on error: n == 0
-	//
-	// future1
-	// on success: 1
-	//
-	// future3
-	// on success: 2
-	// 2 <nil>
-	//
-	// future4
-	// on cancel
+	// on cancel: 4
 	// 0 <nil>
 	// [0 1 0 0 0]
 	// true
+}
+
+func ExampleFuture_error() {
+	future0, err := future.New(&fibonacciTask{n: 0})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	future0.Run()
+	future0.Wait()
+
+	result, err := future0.Result()
+	fmt.Println(result == nil)
+	fmt.Println(err == nil)
+
+	// Output:
+	// on error: 0 -> n is zero
+	// true
+	// false
 }
 
 type fibonacciTask struct {
@@ -74,22 +83,22 @@ type fibonacciTask struct {
 }
 
 func (f *fibonacciTask) OnSuccess(result interface{}) {
-	fmt.Println("on success:", result.(uint))
+	fmt.Printf("on success: %d -> %d\n", f.n, result)
 }
 
 func (f *fibonacciTask) OnError(err error) {
-	fmt.Println("on error:", err)
+	fmt.Printf("on error: %d -> %s\n", f.n, err)
 }
 
 func (f *fibonacciTask) OnCancel() {
-	fmt.Println("on cancel")
+	fmt.Printf("on cancel: %d\n", f.n)
 }
 
 func (f *fibonacciTask) Run(isCanceled func() bool) (interface{}, error) {
 	n := f.n
 
 	if n == 0 {
-		return nil, errors.New("n == 0")
+		return nil, errors.New("n is zero")
 	}
 
 	nums := make([]uint, n+1, n+2)
@@ -99,7 +108,6 @@ func (f *fibonacciTask) Run(isCanceled func() bool) (interface{}, error) {
 	nums[0] = 0
 	nums[1] = 1
 	for i := uint(2); i <= n; i++ {
-		time.Sleep(time.Millisecond * 20)
 		if isCanceled() {
 			break
 		}

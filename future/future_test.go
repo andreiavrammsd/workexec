@@ -18,6 +18,7 @@ func TestFuture_Result(t *testing.T) {
 	taskFuture, err := future.New(&divideTask{a: 4, b: 2})
 	assert.NoError(t, err)
 
+	taskFuture.Run()
 	result, err := taskFuture.Result()
 
 	assert.Equal(t, 2, result)
@@ -29,6 +30,7 @@ func TestFuture_Wait(t *testing.T) {
 	taskFuture, err := future.New(&divideTask{a: 4, b: 2})
 	assert.NoError(t, err)
 
+	taskFuture.Run()
 	taskFuture.Wait()
 	taskFuture.Wait()
 
@@ -47,6 +49,7 @@ func TestFuture_Error(t *testing.T) {
 	taskFuture, err := future.New(&divideTask{a: 4, b: 0})
 	assert.NoError(t, err)
 
+	taskFuture.Run()
 	taskFuture.Wait()
 
 	result, err := taskFuture.Result()
@@ -61,6 +64,7 @@ func TestFuture_Cancel(t *testing.T) {
 	taskFuture, err := future.New(task)
 	assert.NoError(t, err)
 
+	taskFuture.Run()
 	taskFuture.Cancel()
 	taskFuture.Wait()
 
@@ -78,8 +82,8 @@ func TestFuture_TaskOnSuccess(t *testing.T) {
 	taskFuture, err := future.New(task)
 	assert.NoError(t, err)
 
+	taskFuture.Run()
 	taskFuture.Wait()
-
 	result, err := taskFuture.Result()
 
 	assert.Equal(t, in, result)
@@ -95,8 +99,8 @@ func TestFuture_TaskOnError(t *testing.T) {
 	taskFuture, err := future.New(task)
 	assert.NoError(t, err)
 
+	taskFuture.Run()
 	taskFuture.Wait()
-
 	result, err := taskFuture.Result()
 
 	assert.Nil(t, result)
