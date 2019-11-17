@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/andreiavrammsd/jobrunner/future"
 
@@ -19,7 +20,7 @@ func Example() {
 	// Create new executor
 	taskExecutor := taskexecutor.New(config)
 
-	// Star the executor
+	// Start the executor
 	taskExecutor.Start()
 
 	// Create tasks
@@ -33,7 +34,10 @@ func Example() {
 		fmt.Println(err)
 	}
 
-	taskExecutor.Stop()
+	time.AfterFunc(time.Millisecond*50, func() {
+		taskExecutor.Stop()
+	})
+
 	taskExecutor.Wait()
 
 	// Output:
