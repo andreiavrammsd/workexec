@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/andreiavrammsd/jobrunner/simplefuture"
 )
@@ -34,8 +35,8 @@ func ExampleFuture_Cancel() {
 	futureTask4.Cancel()
 	futureTask4.Run()
 
-	fmt.Println(task.result)
-	fmt.Println(task.nums)
+	fmt.Println(task.Result())
+	fmt.Println(task.Nums())
 	fmt.Println(futureTask4.IsCanceled())
 
 	// Output:
@@ -55,7 +56,7 @@ func ExampleFuture_error() {
 	future0.Wait()
 
 	fmt.Println(task.msg)
-	fmt.Println(task.result)
+	fmt.Println(task.Result())
 	fmt.Println(future0.Error() == nil)
 
 	// Output:
@@ -69,6 +70,7 @@ type fibonacciTask struct {
 	nums   []uint
 	result uint
 	msg    string
+	lock   sync.Mutex
 }
 
 func (f *fibonacciTask) OnSuccess() {
@@ -104,7 +106,22 @@ func (f *fibonacciTask) Run(isCanceled func() bool) error {
 		nums[i] = nums[i-1] + nums[i-2]
 	}
 
+	f.lock.Lock()
 	f.nums = nums
 	f.result = nums[n]
+	f.lock.Unlock()
+
 	return nil
+}
+
+func (f *fibonacciTask) Nums() []uint {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	return f.nums
+}
+
+func (f *fibonacciTask) Result() uint {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	return f.result
 }
