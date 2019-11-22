@@ -4,22 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/andreiavrammsd/jobrunner/futurereflect"
+	"github.com/stretchr/testify/assert"
 )
-
-type lines struct {
-	out string
-}
-
-func (l *lines) str(lines []string) {
-	l.out = strings.Join(lines, "\n")
-}
-
-func (l *lines) delete() {
-	l.out = ""
-}
 
 func Test(t *testing.T) {
 	sum := func(a, b int) (int, error) {
@@ -48,4 +35,16 @@ func Test(t *testing.T) {
 	result, err = futureSumMany.Result()
 	assert.Equal(t, 6, result.(int))
 	assert.NoError(t, err)
+}
+
+type lines struct {
+	out string
+}
+
+func (l *lines) str(lines []string) {
+	l.out = strings.Join(lines, "\n")
+}
+
+func (l *lines) delete() {
+	l.out = ""
 }
