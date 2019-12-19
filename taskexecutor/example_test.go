@@ -6,9 +6,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/andreiavrammsd/jobrunner/future"
+	"github.com/andreiavrammsd/workexec/future"
 
-	"github.com/andreiavrammsd/jobrunner/taskexecutor"
+	"github.com/andreiavrammsd/workexec/taskexecutor"
 )
 
 func Example() {

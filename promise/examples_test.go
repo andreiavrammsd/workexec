@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/andreiavrammsd/jobrunner/promise"
+	"github.com/andreiavrammsd/workexec/promise"
 )
 
 func ExamplePromise_Async() {

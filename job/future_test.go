@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/andreiavrammsd/jobrunner/job"
+	"github.com/andreiavrammsd/workexec/job"
 )
 
 func TestFuture_Wait(t *testing.T) {

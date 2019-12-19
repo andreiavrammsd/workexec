@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/andreiavrammsd/jobrunner/job"
-	"github.com/andreiavrammsd/jobrunner/runner"
+	"github.com/andreiavrammsd/workexec/job"
+	"github.com/andreiavrammsd/workexec/runner"
 )
 
 func ExampleRunner() {

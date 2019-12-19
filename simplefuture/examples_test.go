@@ -6,7 +6,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/andreiavrammsd/jobrunner/simplefuture"
+	"github.com/andreiavrammsd/workexec/simplefuture"
 )
 
 func ExampleFuture_Wait() {

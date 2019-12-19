@@ -1,4 +1,4 @@
-module github.com/andreiavrammsd/jobrunner
+module github.com/andreiavrammsd/workexec
 
 go 1.13
 

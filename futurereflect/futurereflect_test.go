@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/andreiavrammsd/jobrunner/futurereflect"
+	"github.com/andreiavrammsd/workexec/futurereflect"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -5,7 +5,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/andreiavrammsd/jobrunner/promise"
+	"github.com/andreiavrammsd/workexec/promise"
 	"github.com/stretchr/testify/assert"
 )
 

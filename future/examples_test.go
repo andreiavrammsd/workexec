@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/andreiavrammsd/jobrunner/future"
+	"github.com/andreiavrammsd/workexec/future"
 )
 
 func ExampleFuture_Wait() {

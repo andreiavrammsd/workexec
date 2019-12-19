@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/andreiavrammsd/jobrunner/simplefuture"
+	"github.com/andreiavrammsd/workexec/simplefuture"
 
 	"github.com/stretchr/testify/assert"
 )

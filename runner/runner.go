@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/andreiavrammsd/jobrunner/job"
+	"github.com/andreiavrammsd/workexec/job"
 	"github.com/cespare/xxhash/v2"
 )
 

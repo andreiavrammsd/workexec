@@ -4,7 +4,7 @@ import (
 	"log"
 	"testing"
 
-	"github.com/andreiavrammsd/jobrunner/job"
+	"github.com/andreiavrammsd/workexec/job"
 )
 
 func TestNew(t *testing.T) {
