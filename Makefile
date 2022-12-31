@@ -9,7 +9,6 @@ test:
 	go test -race -cover -v ./...
 
 lint: check-lint
-	golint -set_exit_status ./...
 	golangci-lint run
 
 coverage:
@@ -19,6 +18,5 @@ prepushhook:
 	echo '#!/bin/sh\n\nmake' > .git/hooks/pre-push && chmod +x .git/hooks/pre-push
 
 check-lint:
-	@[ $(shell which golint) ] || (GO111MODULE=off && go get -u golang.org/x/lint/golint)
-	@[ $(shell which golangci-lint) ] || curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh \
-		| sh -s -- -b $(shell go env GOPATH)/bin v1.21.0
+	@[ $(shell which golangci-lint) ] || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
+		| sh -s -- -b $(shell go env GOPATH)/bin v1.50.1
