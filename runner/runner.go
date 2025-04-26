@@ -16,13 +16,13 @@ const (
 
 // Config allows setup of runner.
 type Config struct {
-	Concurrency uint
-	QueueSize   uint
+	Concurrency int
+	QueueSize   int
 }
 
 // Runner represents a manager of jobs.
 type Runner struct {
-	concurrency uint
+	concurrency int
 	queue       chan *job.Job
 	stop        chan struct{}
 	running     map[uint64]*job.Job
@@ -35,12 +35,12 @@ type Runner struct {
 // Status represents the current state of the runner, regarding number of routines
 // it is working on and count of jobs currently running.
 type Status struct {
-	Concurrency uint
-	RunningJobs uint
+	Concurrency int
+	RunningJobs int
 }
 
 // state of runner
-type state uint
+type state int
 
 const (
 	// stopped means the runner is not working on any routine
@@ -59,7 +59,7 @@ func (r *Runner) Start() {
 	}
 	r.state = running
 
-	for i := uint(0); i < r.concurrency; i++ {
+	for i := 0; i < r.concurrency; i++ {
 		go r.run()
 	}
 }
@@ -78,7 +78,7 @@ func (r *Runner) Stop() {
 		j.Cancel(errors.New("runner was stopped"))
 	}
 
-	for i := uint(0); i < r.concurrency; i++ {
+	for i := 0; i < r.concurrency; i++ {
 		r.stop <- struct{}{}
 	}
 }
@@ -121,7 +121,7 @@ func (r *Runner) Cancel(id job.ID) {
 }
 
 // ScaleUp increases concurrency by starting new worker routines.
-func (r *Runner) ScaleUp(count uint) {
+func (r *Runner) ScaleUp(count int) {
 	if count == 0 {
 		return
 	}
@@ -130,26 +130,26 @@ func (r *Runner) ScaleUp(count uint) {
 	r.concurrency += count
 	r.lock.Unlock()
 
-	for i := uint(0); i < count; i++ {
+	for i := 0; i < count; i++ {
 		go r.run()
 	}
 }
 
 // ScaleDown decreases concurrency by asking routines to stop.
-func (r *Runner) ScaleDown(count uint) {
+func (r *Runner) ScaleDown(count int) {
 	if count == 0 {
 		return
 	}
 
 	r.lock.Lock()
-	if int(r.concurrency)-int(count) >= 0 {
+	if r.concurrency-count >= 0 {
 		r.concurrency -= count
 	} else {
 		r.concurrency = 0
 	}
 	r.lock.Unlock()
 
-	for i := uint(0); i < count; i++ {
+	for i := 0; i < count; i++ {
 		r.stop <- struct{}{}
 	}
 }
@@ -160,7 +160,7 @@ func (r *Runner) Status() Status {
 	defer r.lock.RUnlock()
 	return Status{
 		Concurrency: r.concurrency,
-		RunningJobs: uint(len(r.running)),
+		RunningJobs: len(r.running),
 	}
 }
 

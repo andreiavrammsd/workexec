@@ -187,7 +187,7 @@ func (t *defaultTask) Run(*job.Job) (interface{}, error) {
 }
 
 func (t *defaultTask) OnSuccess(result interface{}) {
-	fmt.Println("on success result:", result.(int))
+	fmt.Println("on success result:", result.(int)) // nolint:errcheck
 }
 
 func (t *defaultTask) OnError(err error) {

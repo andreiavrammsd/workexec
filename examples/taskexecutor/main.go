@@ -1,10 +1,11 @@
 package main
 
 import (
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"log"
-	"math/rand"
+	"math/big"
 	"time"
 
 	"github.com/andreiavrammsd/workexec/future"
@@ -22,16 +23,19 @@ func main() {
 
 	go func() {
 		for {
-			rand.Seed(time.Now().UnixNano())
-			n := rand.Intn(4)
+			n, err := rand.Int(rand.Reader, big.NewInt(4))
+			if err != nil {
+				log.Println("rand error:", err)
+				continue
+			}
 
-			futureTask, err := future.New(&task{in: n})
+			futureTask, err := future.New(&task{in: int(n.Int64())})
 			if err != nil {
 				log.Println("future error:", err)
 				continue
 			}
 
-			if n == 3 {
+			if n.Int64() == 3 {
 				time.AfterFunc(time.Millisecond*100, func() {
 					futureTask.Cancel()
 				})

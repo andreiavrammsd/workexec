@@ -1,4 +1,4 @@
-package job_test
+package job_with_generics_test
 
 import (
 	"errors"
@@ -6,30 +6,30 @@ import (
 	"log"
 	"time"
 
-	"github.com/andreiavrammsd/workexec/job"
+	"github.com/andreiavrammsd/workexec/job_with_generics"
 )
 
 func ExampleJob() {
-	job1, err := job.New(&defaultTask{num: 1})
+	job1, err := job_with_generics.New[int](&defaultTask{num: 1})
 	if err != nil {
 		log.Fatal(err)
 	}
 	future1 := job1.Run()
 
-	job2, err := job.New(&defaultTask{num: -1})
+	job2, err := job_with_generics.New[int](&defaultTask{num: -1})
 	if err != nil {
 		log.Fatal(err)
 	}
 	future2 := job2.Run()
 
-	job3, err := job.New(&defaultTask{num: 0})
+	job3, err := job_with_generics.New[int](&defaultTask{num: 0})
 	if err != nil {
 		log.Fatal(err)
 	}
 	job3.Cancel(errors.New("job 3 was canceled"))
 	future3 := job3.Run()
 
-	fmt.Println(future1.Result().(int)) // nolint:errcheck
+	fmt.Println(future1.Result())
 
 	future2.Wait()
 
@@ -43,12 +43,12 @@ func ExampleJob() {
 }
 
 func Example_cancel_long_running_tasks() {
-	fibonacci10, err := job.New(&fibonacciTask{n: 10})
+	fibonacci10, err := job_with_generics.New[int64](&fibonacciTask{n: 10})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fibonacci100, err := job.New(&fibonacciTask{n: 100})
+	fibonacci100, err := job_with_generics.New[int64](&fibonacciTask{n: 100})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,16 +73,16 @@ type defaultTask struct {
 	num int
 }
 
-func (t *defaultTask) Run(*job.Job) (interface{}, error) {
+func (t *defaultTask) Run(*job_with_generics.Job[int]) (int, error) {
 	if t.num < 0 {
-		return nil, errors.New("negative number")
+		return 0, errors.New("negative number")
 	}
 
 	return t.num + 1, nil
 }
 
-func (t *defaultTask) OnSuccess(result interface{}) {
-	fmt.Println("on success result:", result.(int)) // nolint:errcheck
+func (t *defaultTask) OnSuccess(result int) {
+	fmt.Println("on success result:", result)
 }
 
 func (t *defaultTask) OnError(err error) {
@@ -94,30 +94,30 @@ func (t *defaultTask) OnCancel(err error) {
 }
 
 type fibonacciTask struct {
-	n     uint
-	count uint
+	n     int64
+	count int64
 }
 
 func (f *fibonacciTask) OnCancel(err error) {
 	fmt.Println("on cancel:", err)
 }
 
-func (f *fibonacciTask) Run(j *job.Job) (interface{}, error) {
+func (f *fibonacciTask) Run(j *job_with_generics.Job[int64]) (int64, error) {
 	n := f.n
 
 	if n == 0 {
-		return nil, errors.New("n == 0")
+		return 0, errors.New("n == 0")
 	}
 
-	nums := make([]uint, n+1, n+2)
+	nums := make([]int64, n+1, n+2)
 	if n < 2 {
 		nums = nums[0:2]
 	}
 	nums[0] = 0
 	nums[1] = 1
-	for i := uint(2); i <= n; i++ {
+	for i := int64(2); i <= n; i++ {
 		if j.IsCanceled() {
-			return nil, nil
+			return 0, nil
 		}
 
 		nums[i] = nums[i-1] + nums[i-2]
@@ -126,7 +126,7 @@ func (f *fibonacciTask) Run(j *job.Job) (interface{}, error) {
 		}
 	}
 
-	f.count = uint(len(nums))
+	f.count = int64(len(nums))
 
 	return nums[n], nil
 }

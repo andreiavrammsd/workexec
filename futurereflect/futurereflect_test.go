@@ -33,7 +33,7 @@ func Test(t *testing.T) {
 	}
 	futureSumMany := futurereflect.New(sumMany)(1, 2, 3)
 	result, err = futureSumMany.Result()
-	assert.Equal(t, 6, result.(int))
+	assert.Equal(t, 6, result.(int)) // nolint:errcheck
 	assert.NoError(t, err)
 }
 

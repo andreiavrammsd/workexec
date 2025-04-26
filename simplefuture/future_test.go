@@ -81,7 +81,7 @@ func TestFuture_TaskOnError(t *testing.T) {
 
 	assert.Error(t, taskFuture.Error())
 	assert.False(t, taskFuture.IsCanceled())
-	assert.Error(t, task.set.(error))
+	assert.Error(t, task.set.(error)) // nolint:errcheck
 }
 
 type divideTask struct {
@@ -108,10 +108,7 @@ func (t *longRunningTask) OnCancel() {
 }
 
 func (t *longRunningTask) Run(isCanceled func() bool) error {
-	for {
-		if isCanceled() {
-			break
-		}
+	for !isCanceled() {
 	}
 
 	return nil
