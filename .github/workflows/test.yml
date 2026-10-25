@@ -16,7 +16,7 @@ jobs:
           - name: minimum-supported
             go-version-file: go.mod
           - name: latest
-            go-version: latest
+            go-version: stable
 
     steps:
     - uses: actions/checkout@v4
