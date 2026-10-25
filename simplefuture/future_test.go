@@ -2,86 +2,101 @@ package simplefuture_test
 
 import (
 	"errors"
+	"runtime"
 	"testing"
 
 	"github.com/andreiavrammsd/workexec/simplefuture"
-
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNew_WithNilTaskError(t *testing.T) {
+	t.Parallel()
+
 	taskFuture, err := simplefuture.New(nil)
 	assert.Nil(t, taskFuture)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestFuture_Wait(t *testing.T) {
+	t.Parallel()
+
 	task := &divideTask{a: 4, b: 2}
 	taskFuture, err := simplefuture.New(task)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	taskFuture.Run()
 	taskFuture.Wait()
 	taskFuture.Wait()
 
-	assert.Equal(t, float64(2), task.result)
-	assert.NoError(t, taskFuture.Error())
+	assert.InDelta(t, 2.0, task.result, 0.0001)
+	require.NoError(t, taskFuture.Error())
 	assert.False(t, taskFuture.IsCanceled())
 }
 
 func TestFuture_Error(t *testing.T) {
+	t.Parallel()
+
 	task := &divideTask{a: 4, b: 0}
 	taskFuture, err := simplefuture.New(task)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	taskFuture.Run()
 	taskFuture.Wait()
 
-	assert.Equal(t, float64(0), task.result)
-	assert.Error(t, taskFuture.Error())
+	assert.InDelta(t, 0.0, task.result, 0.0001)
+	require.Error(t, taskFuture.Error())
 	assert.False(t, taskFuture.IsCanceled())
 }
 
 func TestFuture_Cancel(t *testing.T) {
+	t.Parallel()
+
 	task := &longRunningTask{}
 	taskFuture, err := simplefuture.New(task)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	taskFuture.Run()
 	taskFuture.Cancel()
 	taskFuture.Wait()
 
-	assert.NoError(t, taskFuture.Error())
+	require.NoError(t, taskFuture.Error())
 	assert.True(t, taskFuture.IsCanceled())
 	assert.True(t, task.canceled)
 }
 
 func TestFuture_TaskOnSuccess(t *testing.T) {
+	t.Parallel()
+
 	in := 1
 	task := &eventsTask{in: in}
 	taskFuture, err := simplefuture.New(task)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	taskFuture.Run()
 	taskFuture.Wait()
 
-	assert.NoError(t, taskFuture.Error())
+	require.NoError(t, taskFuture.Error())
 	assert.False(t, taskFuture.IsCanceled())
 	assert.Nil(t, task.set)
 }
 
 func TestFuture_TaskOnError(t *testing.T) {
+	t.Parallel()
+
 	in := 0
 	task := &eventsTask{in: in}
 	taskFuture, err := simplefuture.New(task)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	taskFuture.Run()
 	taskFuture.Wait()
 
-	assert.Error(t, taskFuture.Error())
+	require.Error(t, taskFuture.Error())
 	assert.False(t, taskFuture.IsCanceled())
-	assert.Error(t, task.set.(error)) // nolint:errcheck
+	errValue, ok := task.set.(error)
+	require.True(t, ok)
+	require.Error(t, errValue)
 }
 
 type divideTask struct {
@@ -96,6 +111,7 @@ func (t *divideTask) Run(func() bool) error {
 	}
 
 	t.result = float64(t.a / t.b)
+
 	return nil
 }
 
@@ -109,6 +125,7 @@ func (t *longRunningTask) OnCancel() {
 
 func (t *longRunningTask) Run(isCanceled func() bool) error {
 	for !isCanceled() {
+		runtime.Gosched()
 	}
 
 	return nil
@@ -116,10 +133,10 @@ func (t *longRunningTask) Run(isCanceled func() bool) error {
 
 type eventsTask struct {
 	in  int
-	set interface{}
+	set any
 }
 
-func (e *eventsTask) OnSuccess(result interface{}) {
+func (e *eventsTask) OnSuccess(result any) {
 	e.set = result
 }
 
@@ -131,5 +148,6 @@ func (e *eventsTask) Run(func() bool) error {
 	if e.in == 0 {
 		return errors.New("err")
 	}
+
 	return nil
 }

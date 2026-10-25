@@ -4,26 +4,21 @@ run:
   issues-exit-code: 20
   tests: true
 linters:
-  enable:
-    - dupl
-    - gochecknoglobals
-    - gochecknoinits
-    - goconst
-    - gocritic
-    - gocyclo
-    - gosec
-    - lll
-    - misspell
-    - nakedret
-    - prealloc
-    - unconvert
-    - unparam
-    - govet
-    - staticcheck
-    - unused
-    - ineffassign
-    - errcheck
+  default: all
+  disable:
+    - depguard
+    - exhaustruct
+    - exhaustruct_v5
+    - noinlineerr
+    - copyloopvar
+    - intrange
+    - wsl
+    - gomodguard
+    - varnamelen
+    - ireturn
   settings:
+    cyclop:
+      max-complexity: 15
     dupl:
       threshold: 100
     goconst:
@@ -42,11 +37,15 @@ linters:
       simple: true
       range-loops: true
       for-loops: false
-    govet:
-      check-shadowing: true
     errcheck:
       check-type-assertions: true
       check-blank: true
+    # exhaustive:
+    #   default-signifies-exhaustive: true
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
   exclusions:
     generated: lax
     presets:
@@ -58,13 +57,23 @@ linters:
       - third_party$
       - builtin$
       - examples$
+    rules:
+      - path: _test\.go
+        linters:
+          - err113
+          - funlen
+          - lll
+          - wsl_v5
+          - errorlint
 formatters:
   enable:
     - gofmt
     - goimports
+    - gci
+    - gofumpt
+    - golines
+  settings:
+    golines:
+      max-len: 120
   exclusions:
     generated: lax
-    paths:
-      - third_party$
-      - builtin$
-      - examples$

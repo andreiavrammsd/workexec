@@ -12,6 +12,8 @@ const (
 	defaultQueueSize = 1024
 )
 
+var ErrExecutorStopped = errors.New("executor is stopped")
+
 // Config allows setup of executor.
 type Config struct {
 	// Concurrency is the number of routines the executor will start working on.
@@ -42,10 +44,13 @@ func (te *TaskExecutor) Start() {
 // Stop asks the working routines to stop after tasks are finished.
 func (te *TaskExecutor) Stop() {
 	te.lock.Lock()
+
 	if te.stopped {
 		te.lock.Unlock()
+
 		return
 	}
+
 	te.stopped = true
 	te.lock.Unlock()
 
@@ -59,13 +64,21 @@ func (te *TaskExecutor) Wait() {
 	<-te.wait
 }
 
+// Concurrency returns the configured executor concurrency.
+func (te *TaskExecutor) Concurrency() uint {
+	return te.concurrency
+}
+
 // Submit puts a task into the executor queue.
 func (te *TaskExecutor) Submit(future Future) error {
 	te.lock.RLock()
+
 	if te.stopped {
 		te.lock.RUnlock()
-		return errors.New("executor is stopped")
+
+		return ErrExecutorStopped
 	}
+
 	te.lock.RUnlock()
 
 	te.queue <- future
@@ -89,9 +102,11 @@ func (te *TaskExecutor) run() {
 			te.lock.Unlock()
 		case <-te.stop:
 			te.lock.RLock()
+
 			if te.stopped && te.runningTasks == 0 {
 				te.wait <- struct{}{}
 			}
+
 			te.lock.RUnlock()
 
 			return
@@ -104,6 +119,7 @@ func New(c Config) *TaskExecutor {
 	if c.Concurrency == 0 {
 		c.Concurrency = uint(math.Max(1, float64(runtime.NumCPU())-1))
 	}
+
 	if c.QueueSize == 0 {
 		c.QueueSize = defaultQueueSize
 	}

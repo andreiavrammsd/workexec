@@ -5,6 +5,6 @@ type Future interface {
 	Run()
 	Wait()
 	Cancel()
-	Result() (interface{}, error)
+	Result() (any, error)
 	IsCanceled() bool
 }

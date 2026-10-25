@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/andreiavrammsd/workexec/future_with_generics"
 )
@@ -29,8 +30,8 @@ func ExampleFuture_Result() {
 
 	future2.Run()
 	result, err := future2.Result()
-	fmt.Println(result)
-	fmt.Println(err == nil)
+	_, _ = fmt.Fprintln(os.Stdout, result)
+	_, _ = fmt.Fprintln(os.Stdout, err == nil)
 
 	// Output:
 	// on success: 2 -> 1
@@ -47,9 +48,10 @@ func ExampleFuture_Cancel() {
 
 	future4.Run()
 	future4.Cancel()
-	fmt.Println(future4.Result())
-	fmt.Println(fibonacci4.nums)
-	fmt.Println(future4.IsCanceled())
+	result, err := future4.Result()
+	_, _ = fmt.Fprintf(os.Stdout, "%v %v\n", result, err)
+	_, _ = fmt.Fprintln(os.Stdout, fibonacci4.nums)
+	_, _ = fmt.Fprintln(os.Stdout, future4.IsCanceled())
 
 	// Output:
 	// on cancel: 4
@@ -68,8 +70,8 @@ func ExampleFuture_error() {
 	future0.Wait()
 
 	result, err := future0.Result()
-	fmt.Println(result == 0)
-	fmt.Println(err == nil)
+	_, _ = fmt.Fprintln(os.Stdout, result == int64(0))
+	_, _ = fmt.Fprintln(os.Stdout, err == nil)
 
 	// Output:
 	// on error: 0 -> n is zero
@@ -83,15 +85,15 @@ type fibonacciTask struct {
 }
 
 func (f *fibonacciTask) OnSuccess(result int64) {
-	fmt.Printf("on success: %d -> %d\n", f.n, result)
+	_, _ = fmt.Fprintf(os.Stdout, "on success: %d -> %d\n", f.n, result)
 }
 
 func (f *fibonacciTask) OnError(err error) {
-	fmt.Printf("on error: %d -> %s\n", f.n, err)
+	_, _ = fmt.Fprintf(os.Stdout, "on error: %d -> %s\n", f.n, err)
 }
 
 func (f *fibonacciTask) OnCancel() {
-	fmt.Printf("on cancel: %d\n", f.n)
+	_, _ = fmt.Fprintf(os.Stdout, "on cancel: %d\n", f.n)
 }
 
 func (f *fibonacciTask) Run(isCanceled func() bool) (int64, error) {

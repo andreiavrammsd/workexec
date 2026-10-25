@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/andreiavrammsd/workexec/job"
@@ -178,7 +179,7 @@ type defaultTask struct {
 	num int
 }
 
-func (t *defaultTask) Run(*job.Job) (interface{}, error) {
+func (t *defaultTask) Run(*job.Job) (any, error) {
 	if t.num < 0 {
 		return nil, errors.New("negative number")
 	}
@@ -186,36 +187,41 @@ func (t *defaultTask) Run(*job.Job) (interface{}, error) {
 	return t.num + 1, nil
 }
 
-func (t *defaultTask) OnSuccess(result interface{}) {
-	fmt.Println("on success result:", result.(int)) // nolint:errcheck
+func (t *defaultTask) OnSuccess(result any) {
+	value, ok := result.(int)
+	if !ok {
+		return
+	}
+	_, _ = fmt.Fprintf(os.Stdout, "on success result: %d\n", value)
 }
 
 func (t *defaultTask) OnError(err error) {
-	fmt.Println("on error:", err)
+	_, _ = fmt.Fprintf(os.Stdout, "on error: %s\n", err)
 }
 
 func (t *defaultTask) OnCancel(err error) {
-	fmt.Println("on cancel:", err)
+	_, _ = fmt.Fprintf(os.Stdout, "on cancel: %s\n", err)
 }
 
 type cancelableTask struct {
 	*myTask
+
 	err string
 }
 
-func (c *cancelableTask) Run(j *job.Job) (interface{}, error) {
+func (c *cancelableTask) Run(j *job.Job) (any, error) {
 	return c.myTask.Run(j)
 }
 
-func (c *cancelableTask) OnCancel(err error) {
-	fmt.Println("on cancel:", c.err)
+func (c *cancelableTask) OnCancel(_ error) {
+	_, _ = fmt.Fprintf(os.Stdout, "on cancel: %s\n", c.err)
 }
 
 type myTask struct {
 	text string
 }
 
-func (t *myTask) Run(j *job.Job) (interface{}, error) {
+func (t *myTask) Run(j *job.Job) (any, error) {
 	if t.text == "err" {
 		return nil, errors.New("err")
 	}
@@ -224,9 +230,9 @@ func (t *myTask) Run(j *job.Job) (interface{}, error) {
 		if j.IsCanceled() {
 			break
 		}
-		fmt.Println(t.text)
+		_, _ = fmt.Fprintln(os.Stdout, t.text)
 		time.Sleep(time.Millisecond * 60)
 	}
 
-	return nil, nil
+	return nil, job.ErrCanceled
 }

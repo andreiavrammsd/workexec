@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/andreiavrammsd/workexec/taskexecutor_with_generics"
@@ -27,7 +28,7 @@ func Example() {
 		log.Fatal(err)
 	}
 	if err := taskExecutor.Submit(taskFuture); err != nil {
-		fmt.Println(err)
+		_, _ = fmt.Fprintln(os.Stdout, err)
 	}
 
 	anotherTaskFuture, err := taskexecutor_with_generics.NewFuture[string](&anotherTask{input: "abc"})
@@ -35,7 +36,7 @@ func Example() {
 		log.Fatal(err)
 	}
 	if err := taskExecutor.Submit(anotherTaskFuture); err != nil {
-		fmt.Println(err)
+		_, _ = fmt.Fprintln(os.Stdout, err)
 	}
 
 	canceledTaskFuture, err := taskexecutor_with_generics.NewFuture[struct{}](&canceledTask{})
@@ -43,7 +44,7 @@ func Example() {
 		log.Fatal(err)
 	}
 	if err := taskExecutor.Submit(canceledTaskFuture); err != nil {
-		fmt.Println(err)
+		_, _ = fmt.Fprintln(os.Stdout, err)
 	}
 
 	canceledTaskFuture.Cancel()
@@ -66,15 +67,15 @@ type task struct {
 }
 
 func (f *task) OnSuccess(result uint) {
-	fmt.Printf("on success: %d -> %d\n", f.n, result)
+	_, _ = fmt.Fprintf(os.Stdout, "on success: %d -> %d\n", f.n, result)
 }
 
 func (f *task) OnError(err error) {
-	fmt.Printf("on error: %d -> %s\n", f.n, err)
+	_, _ = fmt.Fprintf(os.Stdout, "on error: %d -> %s\n", f.n, err)
 }
 
 func (f *task) OnCancel() {
-	fmt.Printf("on cancel: %d\n", f.n)
+	_, _ = fmt.Fprintf(os.Stdout, "on cancel: %d\n", f.n)
 }
 
 func (f *task) Run(isCanceled func() bool) (uint, error) {
@@ -100,18 +101,18 @@ type anotherTask struct {
 }
 
 func (f *anotherTask) OnSuccess(result string) {
-	fmt.Printf("on success: %s -> %s\n", f.input, result)
+	_, _ = fmt.Fprintf(os.Stdout, "on success: %s -> %s\n", f.input, result)
 }
 
 func (f *anotherTask) OnError(err error) {
-	fmt.Printf("on error: %s -> %s\n", f.input, err)
+	_, _ = fmt.Fprintf(os.Stdout, "on error: %s -> %s\n", f.input, err)
 }
 
 func (f *anotherTask) OnCancel() {
-	fmt.Printf("on cancel: %s\n", f.input)
+	_, _ = fmt.Fprintf(os.Stdout, "on cancel: %s\n", f.input)
 }
 
-func (f *anotherTask) Run(isCanceled func() bool) (string, error) {
+func (f *anotherTask) Run(_ func() bool) (string, error) {
 	if f.input == "" {
 		return "", errors.New("input is empty")
 	}
@@ -119,22 +120,22 @@ func (f *anotherTask) Run(isCanceled func() bool) (string, error) {
 	return f.input + f.input, nil
 }
 
-type canceledTask struct {
-}
+type canceledTask struct{}
 
 func (f *canceledTask) OnSuccess(result string) {
-	fmt.Printf("on success: %s\n", result)
+	_, _ = fmt.Fprintf(os.Stdout, "on success: %s\n", result)
 }
 
 func (f *canceledTask) OnError(err error) {
-	fmt.Printf("on error: %s\n", err)
+	_, _ = fmt.Fprintf(os.Stdout, "on error: %s\n", err)
 }
 
 func (f *canceledTask) OnCancel() {
-	fmt.Printf("on cancel\n")
+	_, _ = fmt.Fprintln(os.Stdout, "on cancel")
 }
 
-func (f *canceledTask) Run(isCanceled func() bool) (struct{}, error) {
+func (f *canceledTask) Run(_ func() bool) (struct{}, error) {
 	time.Sleep(time.Millisecond * 100)
+
 	return struct{}{}, nil
 }

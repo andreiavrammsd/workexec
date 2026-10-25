@@ -14,6 +14,12 @@ const (
 	queueSize   = 1024
 )
 
+var (
+	ErrRunnerStopped    = errors.New("runner is stopped")
+	ErrRunnerWasStopped = errors.New("runner was stopped")
+	ErrCanceledByRunner = errors.New("canceled by runner")
+)
+
 // Config allows setup of runner.
 type Config struct {
 	Concurrency int
@@ -39,17 +45,17 @@ type Status struct {
 	RunningJobs int
 }
 
-// state of runner
+// State of runner.
 type state int
 
 const (
-	// stopped means the runner is not working on any routine
+	// Stopped means the runner is not working on any routine.
 	stopped state = iota
-	// running means the runner has routines working on
+	// Running means the runner has routines working on.
 	running
 )
 
-// Start starts the runner routines
+// Start starts the runner routines.
 func (r *Runner) Start() {
 	r.lock.Lock()
 	defer r.lock.Unlock()
@@ -57,6 +63,7 @@ func (r *Runner) Start() {
 	if r.state == running {
 		return
 	}
+
 	r.state = running
 
 	for i := 0; i < r.concurrency; i++ {
@@ -67,15 +74,18 @@ func (r *Runner) Start() {
 // Stop asks the runner to stop all jobs from running.
 func (r *Runner) Stop() {
 	r.lock.Lock()
+
 	if r.state == stopped {
 		r.lock.Unlock()
+
 		return
 	}
+
 	r.state = stopped
 	r.lock.Unlock()
 
 	for _, j := range r.running {
-		j.Cancel(errors.New("runner was stopped"))
+		j.Cancel(ErrRunnerWasStopped)
 	}
 
 	for i := 0; i < r.concurrency; i++ {
@@ -90,7 +100,7 @@ func (r *Runner) Enqueue(jobs ...*job.Job) error {
 	r.lock.RUnlock()
 
 	if isStopped {
-		return errors.New("runner is stopped")
+		return ErrRunnerStopped
 	}
 
 	for i := 0; i < len(jobs); i++ {
@@ -154,10 +164,11 @@ func (r *Runner) ScaleDown(count int) {
 	}
 }
 
-// Status returns runner state
+// Status returns runner state.
 func (r *Runner) Status() Status {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
+
 	return Status{
 		Concurrency: r.concurrency,
 		RunningJobs: len(r.running),
@@ -190,9 +201,11 @@ func (r *Runner) run() {
 			r.lock.Unlock()
 		case <-r.stop:
 			r.lock.RLock()
+
 			if r.state == stopped && len(r.running) == 0 {
 				r.wait <- struct{}{}
 			}
+
 			r.lock.RUnlock()
 
 			return
@@ -205,8 +218,10 @@ func (r *Runner) cancel(id job.ID) {
 
 	// Cancel now if running
 	j, ok := r.running[hash]
+
 	if ok {
-		j.Cancel(errors.New("canceled by runner"))
+		j.Cancel(ErrCanceledByRunner)
+
 		return
 	}
 
@@ -219,6 +234,7 @@ func New(c Config) *Runner {
 	if c.Concurrency == 0 {
 		c.Concurrency = concurrency
 	}
+
 	if c.QueueSize == 0 {
 		c.QueueSize = queueSize
 	}

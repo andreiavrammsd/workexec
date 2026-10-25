@@ -1,16 +1,19 @@
-package taskexecutor
+package taskexecutor_test
 
 import (
 	"math"
 	"runtime"
 	"testing"
 
+	taskexec "github.com/andreiavrammsd/workexec/taskexecutor"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
-	config := Config{}
-	taskExecutor := New(config)
+	t.Parallel()
 
-	assert.Equal(t, uint(math.Max(1, float64(runtime.NumCPU())-1)), taskExecutor.concurrency)
+	config := taskexec.Config{}
+	taskExecutor := taskexec.New(config)
+
+	assert.Equal(t, uint(math.Max(1, float64(runtime.NumCPU())-1)), taskExecutor.Concurrency())
 }

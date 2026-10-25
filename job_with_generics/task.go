@@ -2,23 +2,23 @@ package job_with_generics
 
 // Task is the interface a task must implement to be part of a job.
 type Task[T any] interface {
-	Run(*Job[T]) (T, error)
+	Run(job *Job[T]) (result T, err error)
 }
 
 // SuccessfulTask is the interface a task must implement to be notified
 // after is executed successfully. OnSuccess receives the task result.
 type SuccessfulTask[T any] interface {
-	OnSuccess(T)
+	OnSuccess(result T)
 }
 
 // FailedTask is the interface a task must implement to be notified when fails.
 // OnError receives the returned error.
 type FailedTask interface {
-	OnError(error)
+	OnError(err error)
 }
 
 // CancelableTask is the interface a task must implement to be notified when it's canceled.
 // OnCancel receives the error the task was canceled with.
 type CancelableTask interface {
-	OnCancel(error)
+	OnCancel(err error)
 }

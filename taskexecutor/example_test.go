@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/andreiavrammsd/workexec/future"
-
 	"github.com/andreiavrammsd/workexec/taskexecutor"
 )
 
@@ -30,8 +30,9 @@ func Example() {
 	}
 
 	// Submit tasks
-	if err := taskExecutor.Submit(taskFuture); err != nil {
-		fmt.Println(err)
+	err = taskExecutor.Submit(taskFuture)
+	if err != nil {
+		_, _ = fmt.Fprintln(os.Stdout, err)
 	}
 
 	time.AfterFunc(time.Millisecond*50, func() {
@@ -48,19 +49,19 @@ type task struct {
 	n uint
 }
 
-func (f *task) OnSuccess(result interface{}) {
-	fmt.Printf("on success: %d -> %d\n", f.n, result)
+func (f *task) OnSuccess(result any) {
+	_, _ = fmt.Fprintf(os.Stdout, "on success: %d -> %d\n", f.n, result)
 }
 
 func (f *task) OnError(err error) {
-	fmt.Printf("on error: %d -> %s\n", f.n, err)
+	_, _ = fmt.Fprintf(os.Stdout, "on error: %d -> %s\n", f.n, err)
 }
 
 func (f *task) OnCancel() {
-	fmt.Printf("on cancel: %d\n", f.n)
+	_, _ = fmt.Fprintf(os.Stdout, "on cancel: %d\n", f.n)
 }
 
-func (f *task) Run(isCanceled func() bool) (interface{}, error) {
+func (f *task) Run(isCanceled func() bool) (any, error) {
 	n := f.n
 
 	if n == 0 {

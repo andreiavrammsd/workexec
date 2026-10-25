@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 
 	"github.com/andreiavrammsd/workexec/simplefuture"
@@ -19,7 +20,7 @@ func ExampleFuture_Wait() {
 	future1.Run()
 	future1.Wait()
 
-	fmt.Println(task.msg)
+	_, _ = fmt.Fprintln(os.Stdout, task.msg)
 
 	// Output:
 	// on success: 1 -> 1
@@ -35,9 +36,9 @@ func ExampleFuture_Cancel() {
 	futureTask4.Cancel()
 	futureTask4.Run()
 
-	fmt.Println(task.Result())
-	fmt.Println(task.Nums())
-	fmt.Println(futureTask4.IsCanceled())
+	_, _ = fmt.Fprintln(os.Stdout, task.Result())
+	_, _ = fmt.Fprintln(os.Stdout, task.Nums())
+	_, _ = fmt.Fprintln(os.Stdout, futureTask4.IsCanceled())
 
 	// Output:
 	// 0
@@ -55,9 +56,9 @@ func ExampleFuture_error() {
 	future0.Run()
 	future0.Wait()
 
-	fmt.Println(task.msg)
-	fmt.Println(task.Result())
-	fmt.Println(future0.Error() == nil)
+	_, _ = fmt.Fprintln(os.Stdout, task.msg)
+	_, _ = fmt.Fprintln(os.Stdout, task.Result())
+	_, _ = fmt.Fprintln(os.Stdout, future0.Error() == nil)
 
 	// Output:
 	// on error: 0 -> n is zero
@@ -117,11 +118,13 @@ func (f *fibonacciTask) Run(isCanceled func() bool) error {
 func (f *fibonacciTask) Nums() []uint {
 	f.lock.Lock()
 	defer f.lock.Unlock()
+
 	return f.nums
 }
 
 func (f *fibonacciTask) Result() uint {
 	f.lock.Lock()
 	defer f.lock.Unlock()
+
 	return f.result
 }

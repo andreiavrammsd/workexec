@@ -6,11 +6,16 @@ import (
 	"sync"
 )
 
+var (
+	ErrNilTask  = errors.New("task is nil")
+	ErrCanceled = errors.New("canceled")
+)
+
 // Future represents a task which executes async work.
 type Future struct {
 	task     Task
 	done     chan struct{}
-	result   interface{}
+	result   any
 	err      error
 	canceled bool
 	on       bool
@@ -22,8 +27,10 @@ func (f *Future) Run() {
 	f.lock.Lock()
 	if f.on {
 		f.lock.Unlock()
+
 		return
 	}
+
 	f.on = true
 	f.lock.Unlock()
 
@@ -33,22 +40,28 @@ func (f *Future) Run() {
 // Wait blocks until task is done.
 func (f *Future) Wait() {
 	f.lock.RLock()
+
 	if !f.on {
 		f.lock.RUnlock()
+
 		return
 	}
+
 	f.lock.RUnlock()
 
 	<-f.done
 }
 
 // Result returns task result and error. Blocks until task is done.
-func (f *Future) Result() (interface{}, error) {
+func (f *Future) Result() (any, error) {
 	f.lock.RLock()
+
 	if !f.on {
 		f.lock.RUnlock()
+
 		return f.result, f.err
 	}
+
 	f.lock.RUnlock()
 
 	<-f.done
@@ -67,6 +80,7 @@ func (f *Future) Cancel() {
 func (f *Future) IsCanceled() bool {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
+
 	return f.canceled
 }
 
@@ -77,11 +91,14 @@ func (f *Future) run() {
 
 	if task, ok := f.task.(CanceledTask); ok {
 		f.lock.RLock()
+
 		if f.canceled {
 			f.lock.RUnlock()
 			task.OnCancel()
+
 			return
 		}
+
 		f.lock.RUnlock()
 	}
 
@@ -101,7 +118,7 @@ func (f *Future) run() {
 // New creates a new future with a given task.
 func New(task Task) (*Future, error) {
 	if task == nil {
-		return nil, errors.New("nil task passed")
+		return nil, ErrNilTask
 	}
 
 	future := &Future{

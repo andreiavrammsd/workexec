@@ -37,6 +37,7 @@ func (p *Promise) Then(f Then) *Promise {
 	p.lock.Lock()
 	p.then = f
 	p.lock.Unlock()
+
 	return p
 }
 
@@ -45,6 +46,7 @@ func (p *Promise) Error(f Error) *Promise {
 	p.lock.Lock()
 	p.error = f
 	p.lock.Unlock()
+
 	return p
 }
 
@@ -58,6 +60,7 @@ func (p *Promise) Async() {
 // Await blocks until the executors finish and returns the error.
 func (p *Promise) Await() error {
 	p.exec()
+
 	return p.err
 }
 
@@ -85,6 +88,7 @@ func (p *Promise) exec() {
 			p.lock.RLock()
 			stop := p.err != nil
 			p.lock.RUnlock()
+
 			if stop {
 				return
 			}

@@ -1,6 +1,10 @@
 package taskexecutor_with_generics
 
-import "github.com/andreiavrammsd/workexec/future_with_generics"
+import (
+	"fmt"
+
+	"github.com/andreiavrammsd/workexec/future_with_generics"
+)
 
 // Future represents a task which executes async work.
 type Future[T any] interface {
@@ -32,13 +36,18 @@ func (a *AnyFuture[T]) IsCanceled() bool {
 }
 
 func (a *AnyFuture[T]) Result() (any, error) {
-	return a.Future.Result()
+	result, err := a.Future.Result()
+	if err != nil {
+		return result, fmt.Errorf("future result: %w", err)
+	}
+
+	return result, nil
 }
 
 func NewFuture[T any](task future_with_generics.Task[T]) (Future[any], error) {
 	future, err := future_with_generics.New(task)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("new future: %w", err)
 	}
 
 	return &AnyFuture[T]{Future: future}, nil

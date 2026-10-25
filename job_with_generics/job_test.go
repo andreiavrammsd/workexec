@@ -8,6 +8,8 @@ import (
 )
 
 func TestNew(t *testing.T) {
+	t.Parallel()
+
 	taskJob, err := job_with_generics.New[int64](&fibonacciTask{n: 1})
 
 	if taskJob == nil {
@@ -24,6 +26,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestJob_CancelWithNotCancelableTask(t *testing.T) {
+	t.Parallel()
+
 	taskJob, err := job_with_generics.New[string](&normalTask{})
 
 	if taskJob == nil {
@@ -42,8 +46,7 @@ func TestJob_CancelWithNotCancelableTask(t *testing.T) {
 	}
 }
 
-type normalTask struct {
-}
+type normalTask struct{}
 
 func (n *normalTask) Run(*job_with_generics.Job[string]) (string, error) {
 	return "", nil

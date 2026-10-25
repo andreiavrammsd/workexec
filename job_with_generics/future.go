@@ -14,8 +14,9 @@ func (f *Future[T]) Wait() {
 }
 
 // Result returns job result. Blocks until job is done.
-func (f *Future[T]) Result() T {
+func (f *Future[T]) Result() any {
 	<-f.done
+
 	return f.result
 }
 

@@ -20,10 +20,13 @@ type Future[T any] struct {
 // Run executes the Task async.
 func (f *Future[T]) Run() {
 	f.lock.Lock()
+
 	if f.on {
 		f.lock.Unlock()
+
 		return
 	}
+
 	f.on = true
 	f.lock.Unlock()
 
@@ -33,10 +36,13 @@ func (f *Future[T]) Run() {
 // Wait blocks until task is done.
 func (f *Future[T]) Wait() {
 	f.lock.RLock()
+
 	if !f.on {
 		f.lock.RUnlock()
+
 		return
 	}
+
 	f.lock.RUnlock()
 
 	<-f.done
@@ -45,10 +51,13 @@ func (f *Future[T]) Wait() {
 // Result returns task result and error. Blocks until task is done.
 func (f *Future[T]) Result() (T, error) {
 	f.lock.RLock()
+
 	if !f.on {
 		f.lock.RUnlock()
+
 		return f.result, f.err
 	}
+
 	f.lock.RUnlock()
 
 	<-f.done
@@ -67,6 +76,7 @@ func (f *Future[T]) Cancel() {
 func (f *Future[T]) IsCanceled() bool {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
+
 	return f.canceled
 }
 
@@ -77,11 +87,15 @@ func (f *Future[T]) run() {
 
 	if task, ok := f.task.(CanceledTask); ok {
 		f.lock.RLock()
+
 		if f.canceled {
 			f.lock.RUnlock()
+
 			task.OnCancel()
+
 			return
 		}
+
 		f.lock.RUnlock()
 	}
 
@@ -98,10 +112,13 @@ func (f *Future[T]) run() {
 	}
 }
 
+// ErrNilTask is returned when a nil task is provided.
+var ErrNilTask = errors.New("nil task passed")
+
 // New creates a new future with a given task.
 func New[T any](task Task[T]) (*Future[T], error) {
 	if task == nil {
-		return nil, errors.New("nil task passed")
+		return nil, ErrNilTask
 	}
 
 	future := &Future[T]{

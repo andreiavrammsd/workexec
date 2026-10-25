@@ -3,7 +3,7 @@ package job
 // Future represents a job running async.
 type Future struct {
 	done     chan struct{}
-	result   interface{}
+	result   any
 	err      error
 	canceled bool
 }
@@ -14,8 +14,9 @@ func (f *Future) Wait() {
 }
 
 // Result returns job result. Blocks until job is done.
-func (f *Future) Result() interface{} {
+func (f *Future) Result() any {
 	<-f.done
+
 	return f.result
 }
 

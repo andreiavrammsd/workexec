@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/andreiavrammsd/workexec/job"
@@ -29,7 +30,11 @@ func ExampleJob() {
 	job3.Cancel(errors.New("job 3 was canceled"))
 	future3 := job3.Run()
 
-	fmt.Println(future1.Result().(int)) // nolint:errcheck
+	result, ok := future1.Result().(int)
+	if !ok {
+		log.Fatal("unexpected result type")
+	}
+	_, _ = fmt.Fprintln(os.Stdout, result)
 
 	future2.Wait()
 
@@ -73,7 +78,7 @@ type defaultTask struct {
 	num int
 }
 
-func (t *defaultTask) Run(*job.Job) (interface{}, error) {
+func (t *defaultTask) Run(*job.Job) (any, error) {
 	if t.num < 0 {
 		return nil, errors.New("negative number")
 	}
@@ -81,16 +86,20 @@ func (t *defaultTask) Run(*job.Job) (interface{}, error) {
 	return t.num + 1, nil
 }
 
-func (t *defaultTask) OnSuccess(result interface{}) {
-	fmt.Println("on success result:", result.(int)) // nolint:errcheck
+func (t *defaultTask) OnSuccess(result any) {
+	value, ok := result.(int)
+	if !ok {
+		return
+	}
+	_, _ = fmt.Fprintf(os.Stdout, "on success result: %d\n", value)
 }
 
 func (t *defaultTask) OnError(err error) {
-	fmt.Println("on error:", err)
+	_, _ = fmt.Fprintf(os.Stdout, "on error: %s\n", err)
 }
 
 func (t *defaultTask) OnCancel(err error) {
-	fmt.Println("on cancel:", err)
+	_, _ = fmt.Fprintf(os.Stdout, "on cancel: %s\n", err)
 }
 
 type fibonacciTask struct {
@@ -99,10 +108,10 @@ type fibonacciTask struct {
 }
 
 func (f *fibonacciTask) OnCancel(err error) {
-	fmt.Println("on cancel:", err)
+	_, _ = fmt.Fprintf(os.Stdout, "on cancel: %s\n", err)
 }
 
-func (f *fibonacciTask) Run(j *job.Job) (interface{}, error) {
+func (f *fibonacciTask) Run(j *job.Job) (any, error) {
 	n := f.n
 
 	if n == 0 {
@@ -117,7 +126,7 @@ func (f *fibonacciTask) Run(j *job.Job) (interface{}, error) {
 	nums[1] = 1
 	for i := uint(2); i <= n; i++ {
 		if j.IsCanceled() {
-			return nil, nil
+			return nil, job.ErrCanceled
 		}
 
 		nums[i] = nums[i-1] + nums[i-2]

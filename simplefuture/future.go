@@ -6,23 +6,30 @@ import (
 	"sync"
 )
 
+// ErrNilTask is returned when a nil task is provided.
+var ErrNilTask = errors.New("nil task passed")
+
 // Future represents a task which executes async work.
 type Future struct {
+	sync.RWMutex
+
 	task     Task
 	done     chan struct{}
 	err      error
 	canceled bool
 	on       bool
-	sync.RWMutex
 }
 
 // Run executes the Task async.
 func (f *Future) Run() {
 	f.Lock()
+
 	if f.on {
 		f.Unlock()
+
 		return
 	}
+
 	f.on = true
 	f.Unlock()
 
@@ -32,10 +39,13 @@ func (f *Future) Run() {
 // Wait blocks until task is done.
 func (f *Future) Wait() {
 	f.RLock()
+
 	if !f.on {
 		f.RUnlock()
+
 		return
 	}
+
 	f.RUnlock()
 
 	<-f.done
@@ -44,6 +54,7 @@ func (f *Future) Wait() {
 func (f *Future) Error() error {
 	f.RLock()
 	defer f.RUnlock()
+
 	return f.err
 }
 
@@ -58,6 +69,7 @@ func (f *Future) Cancel() {
 func (f *Future) IsCanceled() bool {
 	f.RLock()
 	defer f.RUnlock()
+
 	return f.canceled
 }
 
@@ -68,11 +80,15 @@ func (f *Future) run() {
 
 	if task, ok := f.task.(CanceledTask); ok {
 		f.RLock()
+
 		if f.canceled {
 			f.RUnlock()
+
 			task.OnCancel()
+
 			return
 		}
+
 		f.RUnlock()
 	}
 
@@ -92,7 +108,7 @@ func (f *Future) run() {
 // New creates a new future with a given task.
 func New(task Task) (*Future, error) {
 	if task == nil {
-		return nil, errors.New("nil task passed")
+		return nil, ErrNilTask
 	}
 
 	future := &Future{

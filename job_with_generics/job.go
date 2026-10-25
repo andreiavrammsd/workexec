@@ -1,11 +1,12 @@
-// package job_with_generics provides a method to executed an async task and be notified when executions
-// is done (successfully, with error or canceled).
+// Package job_with_generics provides a method to execute an async task and be notified when execution
+// is done (successfully, with error, or canceled).
 // A job contains a task which actually does the work. A task is a struct which implements the
 // Task interface. Other task related interfaces can be used to be notified about events.
 package job_with_generics
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/google/uuid"
@@ -13,6 +14,11 @@ import (
 
 // ID of a job.
 type ID string
+
+var (
+	ErrCanceled = errors.New("canceled")
+	ErrNilTask  = errors.New("nil task passed to job")
+)
 
 // Job contains a Task.
 type Job[T any] struct {
@@ -35,6 +41,7 @@ func (j *Job[T]) Run() *Future[T] {
 
 	go func() {
 		defer close(future.done)
+
 		future.result, future.err = j.run()
 		future.canceled = j.IsCanceled()
 	}()
@@ -49,7 +56,7 @@ func (j *Job[T]) Cancel(err error) {
 	}
 
 	if err == nil {
-		err = errors.New("canceled")
+		err = ErrCanceled
 	}
 
 	j.lock.Lock()
@@ -61,11 +68,12 @@ func (j *Job[T]) Cancel(err error) {
 func (j *Job[T]) IsCanceled() bool {
 	j.lock.RLock()
 	defer j.lock.RUnlock()
+
 	return j.cancel != nil
 }
 
-func (j *Job[T]) run() (result T, err error) {
-	result, err = j.task.Run(j)
+func (j *Job[T]) run() (T, error) {
+	result, err := j.task.Run(j)
 
 	if task, ok := j.task.(CancelableTask); ok {
 		j.lock.RLock()
@@ -74,7 +82,12 @@ func (j *Job[T]) run() (result T, err error) {
 
 		if cancel != nil {
 			task.OnCancel(j.cancel)
-			return
+
+			if err != nil {
+				return result, fmt.Errorf("job canceled: %w", err)
+			}
+
+			return result, fmt.Errorf("job canceled: %w", j.cancel)
 		}
 	}
 
@@ -90,13 +103,17 @@ func (j *Job[T]) run() (result T, err error) {
 		}
 	}
 
-	return
+	if err != nil {
+		return result, fmt.Errorf("job task failed: %w", err)
+	}
+
+	return result, nil
 }
 
 // New creates a new job with a given task.
 func New[T any](task Task[T]) (*Job[T], error) {
 	if task == nil {
-		return nil, errors.New("nil task passed to job")
+		return nil, ErrNilTask
 	}
 
 	job := &Job[T]{

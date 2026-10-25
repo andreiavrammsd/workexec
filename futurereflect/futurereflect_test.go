@@ -6,9 +6,12 @@ import (
 
 	"github.com/andreiavrammsd/workexec/futurereflect"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test(t *testing.T) {
+	t.Parallel()
+
 	sum := func(a, b int) (int, error) {
 		return a + b, nil
 	}
@@ -16,7 +19,7 @@ func Test(t *testing.T) {
 
 	result, err := future.Result()
 	assert.Equal(t, 3, result)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	ls := &lines{}
 
@@ -26,15 +29,18 @@ func Test(t *testing.T) {
 
 	futureDelete := futurereflect.New(ls.delete)()
 	futureDelete.Wait()
-	assert.Equal(t, "", ls.out)
+	assert.Empty(t, ls.out)
 
 	sumMany := func(a, b, c int) int {
 		return a + b + c
 	}
 	futureSumMany := futurereflect.New(sumMany)(1, 2, 3)
 	result, err = futureSumMany.Result()
-	assert.Equal(t, 6, result.(int)) // nolint:errcheck
-	assert.NoError(t, err)
+	value, ok := result.(int)
+	if assert.True(t, ok) {
+		assert.Equal(t, 6, value)
+	}
+	require.NoError(t, err)
 }
 
 type lines struct {

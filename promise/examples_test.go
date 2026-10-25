@@ -18,7 +18,7 @@ func ExamplePromise_Async() {
 	}
 
 	promise.New(exec).Then(func() {
-		fmt.Println("Done")
+		_, _ = fmt.Fprintln(os.Stdout, "Done")
 	}).Async()
 
 	time.Sleep(time.Millisecond * 50)
@@ -35,10 +35,10 @@ func ExamplePromise_Await() {
 
 	p := promise.New(exec).
 		Then(func() {
-			fmt.Println("Done")
+			_, _ = fmt.Fprintln(os.Stdout, "Done")
 		}).
 		Error(func(err error) {
-			fmt.Println("Error:", err)
+			_, _ = fmt.Fprintf(os.Stdout, "Error: %v\n", err)
 		})
 
 	err := p.Await()
@@ -46,7 +46,7 @@ func ExamplePromise_Await() {
 		log.Fatal(err)
 	}
 
-	fmt.Println(exec.result)
+	_, _ = fmt.Fprintln(os.Stdout, exec.result)
 
 	// Output:
 	// Done
@@ -76,9 +76,14 @@ type printer struct {
 	l    sync.Mutex
 }
 
-func (p *printer) Execute() (err error) {
+func (p *printer) Execute() error {
 	p.l.Lock()
-	_, err = p.w.WriteString(p.text)
+	_, err := p.w.WriteString(p.text)
 	p.l.Unlock()
-	return
+
+	if err != nil {
+		return fmt.Errorf("write string: %w", err)
+	}
+
+	return nil
 }

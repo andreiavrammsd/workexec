@@ -9,6 +9,8 @@ import (
 )
 
 func TestRunner_EnqueueWhenRunnerIsStopped(t *testing.T) {
+	t.Parallel()
+
 	r := runner.New(runner.Config{})
 
 	testJob, err := job.New(&task{})
@@ -23,6 +25,8 @@ func TestRunner_EnqueueWhenRunnerIsStopped(t *testing.T) {
 }
 
 func TestRunner_StopMultipleTimes(t *testing.T) {
+	t.Parallel()
+
 	r := runner.New(runner.Config{})
 	r.Start()
 
@@ -33,6 +37,8 @@ func TestRunner_StopMultipleTimes(t *testing.T) {
 }
 
 func TestRunner_StopWithCancelRunningJobs(t *testing.T) {
+	t.Parallel()
+
 	r := runner.New(runner.Config{
 		Concurrency: 1,
 		QueueSize:   1,
@@ -58,9 +64,10 @@ type task struct {
 	duration time.Duration
 }
 
-func (t *task) Run(*job.Job) (interface{}, error) {
+func (t *task) Run(*job.Job) (any, error) {
 	if t.duration > 0 {
 		time.Sleep(t.duration)
 	}
-	return nil, nil
+
+	return nil, job.ErrCanceled
 }

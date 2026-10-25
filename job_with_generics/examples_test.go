@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/andreiavrammsd/workexec/job_with_generics"
@@ -29,7 +30,7 @@ func ExampleJob() {
 	job3.Cancel(errors.New("job 3 was canceled"))
 	future3 := job3.Run()
 
-	fmt.Println(future1.Result())
+	_, _ = fmt.Fprintln(os.Stdout, future1.Result())
 
 	future2.Wait()
 
@@ -82,15 +83,15 @@ func (t *defaultTask) Run(*job_with_generics.Job[int]) (int, error) {
 }
 
 func (t *defaultTask) OnSuccess(result int) {
-	fmt.Println("on success result:", result)
+	_, _ = fmt.Fprintf(os.Stdout, "on success result: %d\n", result)
 }
 
 func (t *defaultTask) OnError(err error) {
-	fmt.Println("on error:", err)
+	_, _ = fmt.Fprintf(os.Stdout, "on error: %s\n", err)
 }
 
 func (t *defaultTask) OnCancel(err error) {
-	fmt.Println("on cancel:", err)
+	_, _ = fmt.Fprintf(os.Stdout, "on cancel: %s\n", err)
 }
 
 type fibonacciTask struct {
@@ -99,7 +100,7 @@ type fibonacciTask struct {
 }
 
 func (f *fibonacciTask) OnCancel(err error) {
-	fmt.Println("on cancel:", err)
+	_, _ = fmt.Fprintf(os.Stdout, "on cancel: %s\n", err)
 }
 
 func (f *fibonacciTask) Run(j *job_with_generics.Job[int64]) (int64, error) {

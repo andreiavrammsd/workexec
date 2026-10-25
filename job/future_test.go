@@ -8,6 +8,8 @@ import (
 )
 
 func TestFuture_Wait(t *testing.T) {
+	t.Parallel()
+
 	futureJob, err := job.New(&task{in: 1})
 	if err != nil {
 		t.Fatal(err)
@@ -28,6 +30,8 @@ func TestFuture_Wait(t *testing.T) {
 }
 
 func TestFuture_Result(t *testing.T) {
+	t.Parallel()
+
 	futureJob, err := job.New(&task{in: 1})
 	if err != nil {
 		t.Fatal(err)
@@ -47,6 +51,8 @@ func TestFuture_Result(t *testing.T) {
 }
 
 func TestFuture_Error(t *testing.T) {
+	t.Parallel()
+
 	futureJob, err := job.New(&task{in: 0})
 	if err != nil {
 		t.Fatal(err)
@@ -64,6 +70,8 @@ func TestFuture_Error(t *testing.T) {
 }
 
 func TestFuture_IsCanceled(t *testing.T) {
+	t.Parallel()
+
 	futureJob, err := job.New(&task{in: 0})
 	if err != nil {
 		t.Fatal(err)
@@ -83,12 +91,13 @@ type task struct {
 	in int
 }
 
-func (t *task) OnCancel(err error) {
+func (t *task) OnCancel(_ error) {
 }
 
-func (t *task) Run(*job.Job) (interface{}, error) {
+func (t *task) Run(*job.Job) (any, error) {
 	if t.in == 0 {
 		return nil, errors.New("err")
 	}
+
 	return t.in + 1, nil
 }

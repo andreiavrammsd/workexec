@@ -8,9 +8,9 @@ import (
 type Future struct {
 	functionType  reflect.Type
 	functionValue reflect.Value
-	args          []interface{}
+	args          []any
 	wait          chan struct{}
-	result        interface{}
+	result        any
 	err           error
 }
 
@@ -20,8 +20,9 @@ func (f *Future) Wait() {
 }
 
 // Result retrieves result and error. It blocks if function is not done.
-func (f *Future) Result() (interface{}, error) {
+func (f *Future) Result() (any, error) {
 	<-f.wait
+
 	return f.result, f.err
 }
 
@@ -30,6 +31,7 @@ func (f *Future) run() {
 
 	numParams := f.functionType.NumIn()
 	values := make([]reflect.Value, numParams)
+
 	for i := 0; i < numParams; i++ {
 		values[i] = reflect.ValueOf(f.args[i])
 	}
@@ -43,16 +45,17 @@ func (f *Future) run() {
 	f.result = ret[0].Interface()
 
 	if f.functionType.NumOut() > 1 && !ret[1].IsNil() {
-		// nolint
-		f.err = ret[1].Interface().(error)
+		if err, ok := ret[1].Interface().(error); ok {
+			f.err = err
+		}
 	}
 }
 
 // Callable is the function to call in order to start running the passed function.
-type Callable func(args ...interface{}) *Future
+type Callable func(args ...any) *Future
 
 // New returns a Callable.
-func New(function interface{}) Callable {
+func New(function any) Callable {
 	if function == nil {
 		return nil
 	}
@@ -67,7 +70,7 @@ func New(function interface{}) Callable {
 		return nil
 	}
 
-	return func(args ...interface{}) *Future {
+	return func(args ...any) *Future {
 		future := &Future{
 			functionType:  functionType,
 			functionValue: reflect.ValueOf(function),

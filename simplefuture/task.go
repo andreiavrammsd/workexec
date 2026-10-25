@@ -5,7 +5,7 @@ type Task interface {
 	// Run is the function which must do the actual work.
 	// If the function passed as argument returns true, a cancellation has been
 	// requested and the work should stopped.
-	Run(func() bool) error
+	Run(isCanceled func() bool) error
 }
 
 // SuccessfulTask is the interface a task must implement to be notified
@@ -17,7 +17,7 @@ type SuccessfulTask interface {
 // FailedTask is the interface a task must implement to be notified when it fails.
 // OnError receives the returned error.
 type FailedTask interface {
-	OnError(error)
+	OnError(err error)
 }
 
 // CanceledTask is the interface a task must implement to be notified when it's canceled.
